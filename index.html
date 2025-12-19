@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfólio - Anselmo Cardoso | Baterista Profissional</title>
+    <link rel="icon" type="image/jpg" href="assets/logo.png">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -613,12 +614,15 @@
             .hero h1 { font-size: 3.5rem; }
             .about-grid { grid-template-columns: 1fr; }
             .hero-container {
-                flex-direction: column-reverse;
+                flex-direction: column;
                 text-align: center;
-                padding-top: 80px;
+                padding-top: 100px;
+                gap: 30px;
             }
             .hero-text {
                 text-align: center;
+                padding: 0 15px;
+                order: 2;
             }
             .hero-text p {
                 margin-left: auto;
@@ -626,25 +630,31 @@
             }
             .stats-row {
                 justify-content: center;
+                flex-wrap: wrap;
+                gap: 30px;
             }
             .hero-image {
-                margin-bottom: 30px;
-                width: 80%;
+                margin-bottom: 20px;
+                width: 100%;
+                max-width: 450px;
+                order: 1;
             }
         }
 
         @media (max-width: 768px) {
+            .section-padding { padding: 60px 0; }
+            
             .nav-menu {
                 position: fixed;
                 top: 0;
                 right: -100%;
-                width: 70%;
+                width: 75%;
                 height: 100vh;
                 background: var(--bg-darker);
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                transition: 0.4s ease;
+                transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
                 box-shadow: -10px 0 30px rgba(0,0,0,0.5);
             }
             
@@ -657,7 +667,31 @@
                 z-index: 1001;
             }
 
-            .hero h1 { font-size: 2.8rem; }
+            .hero h1 { font-size: 2.5rem; }
+            .hero h3 { font-size: 1.5rem; }
+            
+            .hero-content .animate div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+                max-width: 300px;
+            }
+            
+            .btn-outline[style*="margin-left"] {
+                margin-left: 0 !important;
+                margin-top: 10px;
+            }
+
+            .portfolio-grid, .styles-grid {
+                grid-template-columns: 1fr;
+                padding: 0 15px;
+            }
         }
     </style>
 </head>
