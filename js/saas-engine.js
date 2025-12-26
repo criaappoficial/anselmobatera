@@ -16,9 +16,15 @@ const SaaS = {
                 buttonText: "Entrar em Contato",
                 image: "assets/performance.jpg"
             },
+            stats: [
+                { number: "25+", label: "Anos de Estrada" },
+                { number: "15+", label: "Bandas" },
+                { number: "100%", label: "Dedicação" }
+            ],
             about: {
-                title: "Sobre Mim",
-                text: "Olá! Sou Anselmo Cardoso, baterista profissional com uma carreira dedicada à música. Minha jornada começou cedo e hoje somo mais de duas décadas de experiência, tocando com diversas bandas e artistas de renome."
+                title: "Muito Mais Que Barulho",
+                text: "Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, no groove e na musicalidade.\n\nAcredito que a escolha dos pratos e tambores é fundamental para definir a personalidade de cada performance. Por isso, trabalho com equipamentos de alta qualidade que oferecem timbres ricos e projeção equilibrada.",
+                image: "assets/about-drums.jpg"
             },
             contact: {
                 whatsapp: "5511999999999",
@@ -158,29 +164,37 @@ const SaaS = {
     },
 
     saveConfig: function(newConfig) {
-        if (!this.currentUser) return;
+        if (!this.currentUser) return Promise.reject("Usuário não logado");
         
         const userRef = doc(db, 'users', this.currentUser.uid);
-        getDoc(userRef).then(docSnap => {
+        return getDoc(userRef).then(docSnap => {
             if (docSnap.exists() && docSnap.data().isLogin === true) {
-                setDoc(doc(db, 'sites', this.currentUser.uid), newConfig)
+                return setDoc(doc(db, 'sites', this.currentUser.uid), newConfig)
                     .then(() => {
                         console.log("Config Saved");
                         // Cache locally for index.html usage (simulating public site view)
-                        localStorage.setItem('saas_config', JSON.stringify(newConfig));
-                    })
-                    .catch(err => alert("Erro ao salvar: " + err.message));
+                        try {
+                            localStorage.setItem('saas_config', JSON.stringify(newConfig));
+                        } catch (e) {
+                            console.error("Erro ao salvar no LocalStorage (provavelmente quota excedida):", e);
+                            alert("Atenção: A imagem pode ser muito grande para o cache local. Ela foi salva no servidor, mas pode demorar a aparecer.");
+                        }
+                    });
             } else {
-                alert("Permissão negada. Sua conta não está ativa (isLogin = false).");
+                return Promise.reject("Permissão negada. Sua conta não está ativa (isLogin = false).");
             }
         });
     },
 
     updateSection: function(section, data) {
         const config = this.getConfig();
-        // Deep merge for specific section
-        config[section] = { ...config[section], ...data };
-        this.saveConfig(config);
+        // Deep merge only for objects, direct assignment for Arrays
+        if (Array.isArray(data)) {
+            config[section] = data;
+        } else {
+            config[section] = { ...config[section], ...data };
+        }
+        return this.saveConfig(config);
     },
 
     // Utils

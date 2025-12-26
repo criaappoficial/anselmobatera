@@ -89,6 +89,7 @@ window.addEventListener('saasConfigUpdated', (e) => {
 
     // Brands
     renderBrands();
+    renderStats();
 
     // Gallery
     if (config.gallery) {
@@ -176,41 +177,27 @@ function fileToBase64(file) {
     });
 }
 
-// Helper: Handle File Inputs
-const fileInputs = ['heroImage', 'aboutImage']; // Add IDs of file inputs if they exist
-// Currently we don't have file inputs in the HTML, let's assume we might need to add them or handle the string paths.
-// The user asked to "convert to string" when uploading. 
-// We need to listen to change events on file inputs if they exist.
-
-document.body.addEventListener('change', async (e) => {
-    if (e.target.type === 'file') {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                const base64String = await fileToBase64(file);
-                // Find the hidden input or text input that stores the image path/string
-                // Assuming the input ID is related to the file input ID
-                // e.g., heroImageFile -> heroImage (text)
-                const targetId = e.target.getAttribute('data-target'); 
-                if (targetId) {
-                    const targetInput = document.getElementById(targetId);
-                    if (targetInput) {
-                        targetInput.value = base64String;
-                        // Optionally preview it
-                        const previewId = e.target.getAttribute('data-preview');
-                        if (previewId) {
-                            const previewEl = document.getElementById(previewId);
-                            if (previewEl) previewEl.src = base64String;
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("Error converting file:", err);
-                alert("Erro ao processar imagem.");
-            }
-        }
+// Loader Helpers
+function showLoader(text = 'Carregando...') {
+    let loader = document.getElementById('admin-loader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'admin-loader';
+        loader.style.position = 'fixed';
+        loader.style.top = '0';
+        loader.style.left = '0';
+        loader.style.width = '100%';
+        loader.style.height = '100%';
+        loader.style.background = 'rgba(0,0,0,0.7)';
+        loader.style.display = 'flex';
+        loader.style.justifyContent = 'center';
+        loader.style.alignItems = 'center';
+        loader.style.zIndex = '9999';
+        document.body.appendChild(loader);
     }
-});
+    loader.innerHTML = `<div style="color: white; font-size: 2rem;"><i class="fas fa-spinner fa-spin"></i> ${text}</div>`;
+    loader.style.display = 'flex';
+}
 
 // 2. Tab Switching
 function switchTab(tabId) {
@@ -242,32 +229,152 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
     });
 });
 
-// 3. Populate Forms (Handled by saasConfigUpdated event above)
-// const config = SaaS.getConfig(); ... REMOVED
+// Helper: Handle File Inputs
+const fileInputs = ['heroImage', 'aboutImage']; 
 
-// 4. Form Handlers
-document.getElementById('heroForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    SaaS.updateSection('hero', {
-        title: document.getElementById('heroTitle').value,
-        subtitle: document.getElementById('heroSubtitle').value,
-        image: document.getElementById('heroImage').value
-    });
-    alert('Seção Hero atualizada com sucesso!');
+document.body.addEventListener('change', async (e) => {
+    if (e.target.type === 'file') {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate File Size (Max 800KB to be safe for Firestore 1MB limit with Base64 overhead)
+            const maxSize = 800 * 1024; // 800KB
+            if (file.size > maxSize) {
+                alert(`A imagem é muito grande (${(file.size / 1024).toFixed(0)}KB). O limite é 800KB. Por favor, comprima a imagem antes de enviar.`);
+                e.target.value = ''; // Clear input
+                return;
+            }
+
+            showLoader('Processando Imagem...');
+            try {
+                const base64String = await fileToBase64(file);
+                const targetId = e.target.getAttribute('data-target'); 
+                if (targetId) {
+                    const targetInput = document.getElementById(targetId);
+                    if (targetInput) {
+                        targetInput.value = base64String;
+                        // Preview
+                        const previewId = e.target.getAttribute('data-preview');
+                        const previewEl = document.getElementById(previewId);
+                        if (previewId && previewEl) {
+                            previewEl.src = base64String;
+                            previewEl.style.display = 'block';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error converting file:", err);
+                alert("Erro ao processar imagem.");
+            } finally {
+                hideLoader();
+            }
+        }
+    }
 });
 
-document.getElementById('aboutForm').addEventListener('submit', (e) => {
+function hideLoader() {
+    const loader = document.getElementById('admin-loader');
+    if (loader) loader.style.display = 'none';
+}
+
+// 4. Form Handlers
+document.getElementById('heroForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    SaaS.updateSection('about', {
-        title: document.getElementById('aboutTitle').value,
-        text: document.getElementById('aboutText').value,
-        image: document.getElementById('aboutImage').value
-    });
-    alert('Sobre Mim atualizado com sucesso!');
+    showLoader();
+    try {
+        await SaaS.updateSection('hero', {
+            title: document.getElementById('heroTitle').value,
+            subtitle: document.getElementById('heroSubtitle').value,
+            image: document.getElementById('heroImage').value
+        });
+        alert('Seção Hero atualizada com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar Hero.');
+    } finally {
+        hideLoader();
+    }
+});
+
+document.getElementById('aboutForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoader();
+    try {
+        await SaaS.updateSection('about', {
+            title: document.getElementById('aboutTitle').value,
+            text: document.getElementById('aboutText').value,
+            image: document.getElementById('aboutImage').value
+        });
+        alert('Sobre Mim atualizado com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar Sobre Mim.');
+    } finally {
+        hideLoader();
+    }
 });
 
 // Brands Logic
-function renderBrands() {
+window.removeBrand = async function(index) {
+    if(!confirm('Tem certeza que deseja remover esta marca?')) return;
+    
+    showLoader();
+    try {
+        const brands = SaaS.getConfig().brands || [];
+        brands.splice(index, 1);
+        await SaaS.updateSection('brands', brands);
+        renderBrands(); // Re-render triggers from config update, but we call it just in case or wait for event
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao remover marca.');
+    } finally {
+        hideLoader();
+    }
+};
+
+window.saveBrand = async function(index) {
+    showLoader();
+    try {
+        const brands = SaaS.getConfig().brands || [];
+        if (brands[index]) {
+            brands[index].name = document.getElementById(`brand-name-${index}`).value;
+            // Handle image from file input if present, or hidden input
+            // The render loop below sets up inputs.
+            // Let's assume we read from the inputs rendered.
+            // Note: If user changed image, it should be in the hidden input if we use the file handler logic.
+            // But let's verify how renderBrands sets up inputs.
+            // It seems we rely on "Salvar Marcas" (saveBrands) for bulk update usually?
+            // The user wants "Botão para cada elemento". So individual save.
+            
+            // We need to grab the potentially updated image value.
+            // The renderBrands below (in old code) created inputs with IDs.
+            
+            // Wait, we need to handle the image update correctly.
+            // The file handler updates the target input.
+            // Let's ensure the input IDs are consistent.
+            const logoInput = document.getElementById(`brand-logo-${index}`);
+            if (logoInput) brands[index].logo = logoInput.value;
+            
+            await SaaS.updateSection('brands', brands);
+            alert('Marca salva com sucesso!');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar marca.');
+    } finally {
+        hideLoader();
+    }
+};
+
+window.editBrand = function(index) {
+    // Switch to edit mode for this item
+    renderBrands(index); // Re-render with this index in edit mode
+};
+
+// We need a state to track which item is being edited if we want to toggle UI.
+// Or we can just render all as View and toggle one.
+let editingBrandIndex = -1;
+
+function renderBrands(editIndex = -1) {
     const list = document.getElementById('brandList');
     if (!list) return;
     
@@ -289,118 +396,241 @@ function renderBrands() {
         div.className = 'form-group card';
         div.style.padding = '15px';
         div.style.background = 'var(--bg-darker)';
-        div.innerHTML = `
-            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                <strong>Marca ${index + 1}</strong>
-                <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px; font-size: 0.8rem;" onclick="removeBrand(${index})">Remover</button>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <label class="form-label">Nome da Marca</label>
-                    <input type="text" class="form-control" value="${brand.name || ''}" id="brand-name-${index}" placeholder="Ex: Zeus Cymbals">
+        div.style.marginBottom = '15px';
+        
+        const isEditing = (index === editIndex);
+        
+        if (isEditing) {
+            // Edit Mode
+            div.innerHTML = `
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; justify-content: space-between;">
+                    <strong>Editando Marca ${index + 1}</strong>
                 </div>
-                <div>
-                    <label class="form-label">Logo da Marca (Imagem)</label>
-                    <input type="file" class="form-control" accept="image/*" onchange="handleBrandLogoUpload(this, ${index})">
-                    <input type="hidden" id="brand-logo-${index}" value="${brand.logo || ''}">
-                    <div style="margin-top: 10px; background: #333; padding: 5px; border-radius: 5px; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center;">
-                        ${logoSrc ? `<img src="${logoSrc}" id="brand-preview-${index}" style="max-height: 40px; max-width: 100%;">` : `<span id="brand-preview-text-${index}" style="font-size: 0.8rem; color: #aaa;">Sem logo</span><img id="brand-preview-${index}" style="display:none; max-height: 40px; max-width: 100%;">`}
+                <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                    <div>
+                        <label class="form-label">Nome</label>
+                        <input type="text" class="form-control" value="${brand.name || ''}" id="brand-name-${index}">
+                    </div>
+                    <div>
+                        <label class="form-label">Logo (URL ou Upload)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" class="form-control" value="${brand.logo || ''}" id="brand-logo-${index}" readonly style="background: #333; color: #777;">
+                            <label class="btn-primary" style="cursor: pointer; margin: 0; white-space: nowrap;">
+                                <i class="fas fa-upload"></i> Upload
+                                <input type="file" style="display: none;" data-target="brand-logo-${index}" data-preview="brand-preview-${index}">
+                            </label>
+                        </div>
+                        <img id="brand-preview-${index}" src="${logoSrc || ''}" style="max-height: 50px; margin-top: 10px; display: ${logoSrc ? 'block' : 'none'}; border-radius: 4px;">
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" class="btn-primary" onclick="saveBrand(${index})">Salvar</button>
+                        <button type="button" class="btn-outline" onclick="renderBrands(-1)">Cancelar</button>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // View Mode
+            div.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img src="${logoSrc || ''}" style="width: 40px; height: 40px; object-fit: contain; background: white; border-radius: 4px; padding: 2px; display: ${logoSrc ? 'block' : 'none'};">
+                        <div>
+                            <div style="font-weight: bold; font-size: 1.1rem;">${brand.name || 'Sem Nome'}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn-outline" style="padding: 5px 10px;" onclick="renderBrands(${index})"><i class="fas fa-edit"></i> Editar</button>
+                        <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px;" onclick="removeBrand(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+        }
         list.appendChild(div);
     });
 }
-
-function handleBrandLogoUpload(input, index) {
-    if (input.files && input.files[0]) {
-        fileToBase64(input.files[0]).then(base64 => {
-            document.getElementById(`brand-logo-${index}`).value = base64;
-            const preview = document.getElementById(`brand-preview-${index}`);
-            preview.src = base64;
-            preview.style.display = 'block';
-            
-            const text = document.getElementById(`brand-preview-text-${index}`);
-            if(text) text.style.display = 'none';
-        });
+window.addBrandField = async function() {
+    showLoader();
+    try {
+        const brands = SaaS.getConfig().brands || [];
+        brands.push({ name: "", logo: "" });
+        await SaaS.updateSection('brands', brands);
+        renderBrands(brands.length - 1);
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao adicionar marca.');
+    } finally {
+        hideLoader();
     }
-}
+};
 
-function addBrandField() {
-    const config = SaaS.getConfig();
-    if (!config.brands) config.brands = [];
-    config.brands.push({ name: "", logo: "" });
-    SaaS.saveConfig(config);
-    renderBrands();
-}
-
-function removeBrand(index) {
-    if(confirm('Tem certeza?')) {
-        const config = SaaS.getConfig();
-        config.brands.splice(index, 1);
-        SaaS.saveConfig(config);
-        renderBrands();
-    }
-}
-
-function saveBrands() {
-    const config = SaaS.getConfig();
-    const newBrands = [];
-    const count = config.brands ? config.brands.length : 0;
+// Stats Logic
+window.renderStats = function(editIndex = -1) {
+    const list = document.getElementById('statsList');
+    if (!list) return;
     
-    for(let i=0; i<count; i++) {
-        const nameEl = document.getElementById(`brand-name-${i}`);
-        const logoEl = document.getElementById(`brand-logo-${i}`);
-        if (nameEl && logoEl) {
-             newBrands.push({
-                name: nameEl.value,
-                logo: logoEl.value
-            });
+    list.innerHTML = '';
+    const stats = SaaS.getConfig().stats || [];
+    
+    if (stats.length === 0) {
+        list.innerHTML = '<p class="text-muted" style="text-align:center; padding: 20px;">Nenhuma estatística cadastrada.</p>';
+        return;
+    }
+    
+    stats.forEach((stat, index) => {
+        const div = document.createElement('div');
+        div.className = 'form-group card';
+        div.style.padding = '15px';
+        div.style.background = 'var(--bg-darker)';
+        div.style.marginBottom = '15px';
+        
+        const isEditing = (index === editIndex);
+        
+        if (isEditing) {
+            // Edit Mode
+            div.innerHTML = `
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; justify-content: space-between;">
+                    <strong>Editando Estatística ${index + 1}</strong>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="form-label">Número (ex: 25+)</label>
+                        <input type="text" class="form-control" value="${stat.number || ''}" id="stat-number-${index}">
+                    </div>
+                    <div>
+                        <label class="form-label">Rótulo (ex: Anos)</label>
+                        <input type="text" class="form-control" value="${stat.label || ''}" id="stat-label-${index}">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="button" class="btn-primary" onclick="saveStat(${index})">Salvar</button>
+                    <button type="button" class="btn-outline" onclick="renderStats(-1)">Cancelar</button>
+                </div>
+            `;
+        } else {
+            // View Mode
+            div.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="background: var(--primary); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
+                            ${stat.number || '0'}
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; font-size: 1.1rem;">${stat.label || 'Rótulo'}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn-outline" style="padding: 5px 10px;" onclick="renderStats(${index})"><i class="fas fa-edit"></i> Editar</button>
+                        <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px;" onclick="removeStat(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
         }
+        list.appendChild(div);
+    });
+};
+
+window.addStatField = async function() {
+    showLoader();
+    try {
+        const stats = SaaS.getConfig().stats || [];
+        stats.push({ number: "0", label: "Novo Item" });
+        await SaaS.updateSection('stats', stats);
+        renderStats(stats.length - 1);
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao adicionar estatística.');
+    } finally {
+        hideLoader();
     }
-    
-    const fullConfig = SaaS.getConfig();
-    fullConfig.brands = newBrands;
-    SaaS.saveConfig(fullConfig);
-    
-    alert('Marcas salvas!');
-}
+};
 
-// Make functions global for onclick
-window.addBrandField = addBrandField;
-window.removeBrand = removeBrand;
-window.saveBrands = saveBrands;
-window.handleBrandLogoUpload = handleBrandLogoUpload;
+window.removeStat = async function(index) {
+    if(!confirm('Tem certeza que deseja remover esta estatística?')) return;
+    showLoader();
+    try {
+        const stats = SaaS.getConfig().stats || [];
+        stats.splice(index, 1);
+        await SaaS.updateSection('stats', stats);
+        renderStats();
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao remover estatística.');
+    } finally {
+        hideLoader();
+    }
+};
+
+window.saveStat = async function(index) {
+    showLoader();
+    try {
+        const stats = SaaS.getConfig().stats || [];
+        if (stats[index]) {
+            stats[index].number = document.getElementById(`stat-number-${index}`).value;
+            stats[index].label = document.getElementById(`stat-label-${index}`).value;
+            await SaaS.updateSection('stats', stats);
+            alert('Estatística salva com sucesso!');
+            renderStats(); // Return to view mode
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar estatística.');
+    } finally {
+        hideLoader();
+    }
+};
 
 
-document.getElementById('galleryForm').addEventListener('submit', (e) => {
+document.getElementById('galleryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    SaaS.updateSection('gallery', {
-        img1: document.getElementById('gallery1').value,
-        img2: document.getElementById('gallery2').value,
-        img3: document.getElementById('gallery3').value,
-        img4: document.getElementById('gallery4').value
-    });
-    alert('Galeria atualizada!');
+    showLoader();
+    try {
+        await SaaS.updateSection('gallery', {
+            img1: document.getElementById('gallery1').value,
+            img2: document.getElementById('gallery2').value,
+            img3: document.getElementById('gallery3').value,
+            img4: document.getElementById('gallery4').value
+        });
+        alert('Galeria atualizada!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao atualizar galeria.');
+    } finally {
+        hideLoader();
+    }
 });
 
-document.getElementById('styleForm').addEventListener('submit', (e) => {
+document.getElementById('styleForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    SaaS.updateSection('style', {
-        videoBg: document.getElementById('videoBg').value
-    });
-    alert('Estilo atualizado!');
+    showLoader();
+    try {
+        await SaaS.updateSection('style', {
+            videoBg: document.getElementById('videoBg').value
+        });
+        alert('Estilo atualizado!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao atualizar estilo.');
+    } finally {
+        hideLoader();
+    }
 });
 
-document.getElementById('contactForm').addEventListener('submit', (e) => {
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    SaaS.updateSection('contact', {
-        whatsapp: document.getElementById('contactWhatsapp').value,
-        email: document.getElementById('contactEmail').value,
-        instagram: document.getElementById('contactInstagram').value
-    });
-    alert('Contatos atualizados com sucesso!');
+    showLoader();
+    try {
+        await SaaS.updateSection('contact', {
+            whatsapp: document.getElementById('contactWhatsapp').value,
+            email: document.getElementById('contactEmail').value,
+            instagram: document.getElementById('contactInstagram').value
+        });
+        alert('Contatos atualizados com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao atualizar contatos.');
+    } finally {
+        hideLoader();
+    }
 });
 
 // Logout
@@ -437,48 +667,65 @@ function renderVideos() {
     });
 }
 
-function addVideoField() {
-    const config = SaaS.getConfig();
-    config.videos.push({ title: "Novo Vídeo", url: "", type: "youtube" });
-    SaaS.saveConfig(config);
-    renderVideos();
-}
+window.addVideoField = async function() {
+    showLoader();
+    try {
+        const config = SaaS.getConfig();
+        config.videos = config.videos || [];
+        config.videos.push({ title: "Novo Vídeo", url: "", type: "youtube" });
+        await SaaS.saveConfig(config);
+        renderVideos();
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao adicionar vídeo.');
+    } finally {
+        hideLoader();
+    }
+};
 
-function removeVideo(index) {
-    if(confirm('Tem certeza?')) {
+window.removeVideo = async function(index) {
+    if(!confirm('Tem certeza que deseja remover este vídeo?')) return;
+    
+    showLoader();
+    try {
         const config = SaaS.getConfig();
         config.videos.splice(index, 1);
-        SaaS.saveConfig(config);
+        await SaaS.saveConfig(config);
         renderVideos();
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao remover vídeo.');
+    } finally {
+        hideLoader();
     }
-}
+};
 
-function saveVideos() {
-    const config = SaaS.getConfig();
-    const newVideos = [];
-    const count = config.videos.length;
-    
-    for(let i=0; i<count; i++) {
-        newVideos.push({
-            title: document.getElementById(`vid-title-${i}`).value,
-            url: document.getElementById(`vid-url-${i}`).value,
-            id: document.getElementById(`vid-url-${i}`).value, // simplifying for demo
-            type: "youtube" // default
-        });
+window.saveVideos = async function() {
+    showLoader();
+    try {
+        const config = SaaS.getConfig();
+        const newVideos = [];
+        const count = config.videos ? config.videos.length : 0;
+        
+        for(let i=0; i<count; i++) {
+            newVideos.push({
+                title: document.getElementById(`vid-title-${i}`).value,
+                url: document.getElementById(`vid-url-${i}`).value,
+                id: document.getElementById(`vid-url-${i}`).value,
+                type: "youtube"
+            });
+        }
+        
+        config.videos = newVideos;
+        await SaaS.saveConfig(config);
+        alert('Vídeos salvos com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar vídeos.');
+    } finally {
+        hideLoader();
     }
-    
-    SaaS.updateSection('videos', newVideos); // This structure matches config.videos array directly? No, updateSection expects object merge.
-    // updateSection merges keys. So if I pass array it might fail if implementation assumes object.
-    // Let's check saas-engine.js: config[section] = { ...config[section], ...data }; 
-    // If section is 'videos', config.videos is an array. Merging array with object is bad.
-    
-    // Correction: I should directly modify the config object for arrays
-    const fullConfig = SaaS.getConfig();
-    fullConfig.videos = newVideos;
-    SaaS.saveConfig(fullConfig);
-    
-    alert('Vídeos salvos!');
-}
+};
 
 // Pricing
 function renderPricing() {
@@ -510,44 +757,70 @@ function renderPricing() {
     });
 }
 
-function savePricing() {
-    const config = SaaS.getConfig();
-    const count = config.pricing.length;
-    const newPricing = [];
-    
-    for(let i=0; i<count; i++) {
-        newPricing.push({
-            id: i,
-            title: document.getElementById(`price-title-${i}`).value,
-            price: document.getElementById(`price-val-${i}`).value,
-            features: config.pricing[i].features // preserve features for now
-        });
+window.addPricingField = async function() {
+    showLoader();
+    try {
+        const config = SaaS.getConfig();
+        config.pricing = config.pricing || [];
+        config.pricing.push({ title: "Novo Serviço", price: "R$ 0,00", features: [] });
+        await SaaS.saveConfig(config);
+        renderPricing();
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao adicionar serviço.');
+    } finally {
+        hideLoader();
     }
-    
-    const fullConfig = SaaS.getConfig();
-    fullConfig.pricing = newPricing;
-    SaaS.saveConfig(fullConfig);
-    alert('Preços salvos!');
-}
+};
 
-function removePrice(index) {
-     if(confirm('Tem certeza?')) {
+window.savePricing = async function() {
+    showLoader();
+    try {
+        const config = SaaS.getConfig();
+        const count = config.pricing ? config.pricing.length : 0;
+        const newPricing = [];
+        
+        for(let i=0; i<count; i++) {
+            newPricing.push({
+                id: i,
+                title: document.getElementById(`price-title-${i}`).value,
+                price: document.getElementById(`price-val-${i}`).value,
+                features: config.pricing[i].features || []
+            });
+        }
+        
+        config.pricing = newPricing;
+        await SaaS.saveConfig(config);
+        alert('Preços salvos com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar preços.');
+    } finally {
+        hideLoader();
+    }
+};
+
+window.removePrice = async function(index) {
+     if(!confirm('Tem certeza que deseja remover este serviço?')) return;
+     
+     showLoader();
+     try {
         const config = SaaS.getConfig();
         config.pricing.splice(index, 1);
-        SaaS.saveConfig(config);
+        await SaaS.saveConfig(config);
         renderPricing();
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao remover serviço.');
+    } finally {
+        hideLoader();
     }
-}
+};
 
 // Initial Renders
 renderVideos();
 renderPricing();
 
 // Expose functions to global scope for HTML onclick attributes
-window.addVideoField = addVideoField;
-window.removeVideo = removeVideo;
-window.saveVideos = saveVideos;
-window.savePricing = savePricing;
-window.removePrice = removePrice;
 window.switchTab = switchTab;
 

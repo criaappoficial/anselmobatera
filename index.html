@@ -746,19 +746,8 @@
                     </a>
                 </div>
 
-                <div class="stats-row animate">
-                    <div class="stat-item">
-                        <span class="stat-number">25+</span>
-                        <span class="stat-label">Anos de Estrada</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">15+</span>
-                        <span class="stat-label">Bandas</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">100%</span>
-                        <span class="stat-label">Dedicação</span>
-                    </div>
+                <div class="stats-row animate" id="stats-container">
+                    <!-- Stats will be injected by JS -->
                 </div>
             </div>
             <div class="hero-image">
@@ -939,6 +928,56 @@
     <script type="module" src="js/saas-engine.js"></script>
     <script type="module" src="js/loader.js"></script>
     <script>
+        // SaaS Config Loader
+        function renderDynamicContent(config) {
+            if (!config) return;
+
+            // Hero
+            if (config.hero) {
+                if(document.getElementById('hero-title')) document.getElementById('hero-title').innerHTML = config.hero.title; // innerHTML for spans
+                if(document.getElementById('hero-subtitle')) document.getElementById('hero-subtitle').textContent = config.hero.subtitle;
+                // Hero Image - Note: Logic might be needed if it's a background or img tag. 
+                // Current HTML: <div class="hero-image"><img src="assets/performance.jpg"></div>
+                // We need an ID for the image.
+                const heroImg = document.querySelector('.hero-image img');
+                if(heroImg && config.hero.image) heroImg.src = config.hero.image;
+            }
+
+            // Stats
+            const statsContainer = document.getElementById('stats-container');
+            if (statsContainer && config.stats) {
+                statsContainer.innerHTML = '';
+                config.stats.forEach(stat => {
+                    const div = document.createElement('div');
+                    div.className = 'stat-item';
+                    div.innerHTML = `
+                        <span class="stat-number">${stat.number}</span>
+                        <span class="stat-label">${stat.label}</span>
+                    `;
+                    statsContainer.appendChild(div);
+                });
+            }
+
+            // About
+            if (config.about) {
+                if(document.getElementById('about-title')) document.getElementById('about-title').innerHTML = config.about.title;
+                if(document.getElementById('about-text-container')) document.getElementById('about-text-container').innerHTML = `<p>${config.about.text.replace(/\n/g, '<br>')}</p>`;
+                // About Image?
+            }
+        }
+
+        window.addEventListener('saasConfigUpdated', (e) => {
+            renderDynamicContent(e.detail);
+        });
+
+        // Initial Check (in case event fired before listener)
+        const cachedConfig = localStorage.getItem('saas_config');
+        if (cachedConfig) {
+            try {
+                renderDynamicContent(JSON.parse(cachedConfig));
+            } catch(e) { console.error("Error parsing cached config", e); }
+        }
+
         // Header Scroll
         window.addEventListener('scroll', () => {
             const header = document.getElementById('header');
