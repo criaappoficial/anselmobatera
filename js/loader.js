@@ -16,38 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function applyConfig(config) {
-    // 1. Hero Section
-    const heroTitle = document.getElementById('hero-title');
-    const heroSubtitle = document.getElementById('hero-subtitle');
-    
-    if (heroTitle && config.hero.title) heroTitle.innerHTML = config.hero.title.replace("Excelência", `<span class="text-gradient">Excelência</span>`); // Simple hack to keep gradient
-    // Ideally we should store the gradient part separately or use a rich text editor.
-    // For this demo, we'll just set text.
-    if (heroTitle && config.hero.title) heroTitle.innerText = config.hero.title;
-    
-    if (heroSubtitle && config.hero.subtitle) heroSubtitle.innerText = config.hero.subtitle;
-
-    if (heroImg) {
-         if (config.hero.image && config.hero.image.length > 0) {
-             heroImg.src = config.hero.image;
-         } else {
-             // Keep default HTML src or fallback
-             // Not modifying src if empty to avoid 404
-         }
-    }
-
-    // 2. About Section
-    const aboutTitle = document.getElementById('about-title');
-    const aboutTextContainer = document.getElementById('about-text-container');
-    const aboutImg = document.getElementById('about-img');
-    
-    if (aboutTitle && config.about.title) aboutTitle.innerText = config.about.title;
-    if (aboutTextContainer && config.about.text) {
-        aboutTextContainer.innerHTML = `<p>${config.about.text.replace(/\n/g, '<br>')}</p>`;
-    }
-    if (aboutImg && config.about.image && config.about.image.length > 0) {
-        aboutImg.src = config.about.image;
-    }
+    // Hero and About are handled in index.html to support custom logic (coloring, etc.)
 
     // Brands
     const brandsContainer = document.querySelector('.brands');

@@ -934,7 +934,17 @@
 
             // Hero
             if (config.hero) {
-                if(document.getElementById('hero-title')) document.getElementById('hero-title').innerHTML = config.hero.title; // innerHTML for spans
+                if(document.getElementById('hero-title')) {
+                    // Logic to color text after 17 characters
+                    let titleText = config.hero.title;
+                    if (titleText.length > 16) {
+                        const firstPart = titleText.substring(0, 16);
+                        const secondPart = titleText.substring(16);
+                        document.getElementById('hero-title').innerHTML = `${firstPart}<span style="color: var(--primary);">${secondPart}</span>`;
+                    } else {
+                        document.getElementById('hero-title').innerHTML = titleText;
+                    }
+                }
                 if(document.getElementById('hero-subtitle')) document.getElementById('hero-subtitle').textContent = config.hero.subtitle;
                 // Hero Image - Note: Logic might be needed if it's a background or img tag. 
                 // Current HTML: <div class="hero-image"><img src="assets/performance.jpg"></div>
@@ -961,7 +971,18 @@
             // About
             if (config.about) {
                 if(document.getElementById('about-subtitle')) document.getElementById('about-subtitle').textContent = config.about.subtitle || "Minha História";
-                if(document.getElementById('about-title')) document.getElementById('about-title').innerHTML = config.about.title;
+                
+                if(document.getElementById('about-title')) {
+                    let aboutTitleText = config.about.title;
+                    if (aboutTitleText.length > 18) {
+                        const firstPart = aboutTitleText.substring(0, 12);
+                        const secondPart = aboutTitleText.substring(12);
+                        document.getElementById('about-title').innerHTML = `${firstPart}<span style="color: var(--primary);">${secondPart}</span>`;
+                    } else {
+                        document.getElementById('about-title').innerHTML = aboutTitleText;
+                    }
+                }
+                
                 if(document.getElementById('about-text-container')) document.getElementById('about-text-container').innerHTML = `<p>${config.about.text.replace(/\n/g, '<br>')}</p>`;
                 const aboutImg = document.getElementById('about-img');
                 if(aboutImg && config.about.image) aboutImg.src = config.about.image;
