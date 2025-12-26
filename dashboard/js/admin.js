@@ -376,7 +376,20 @@ window.editBrand = function(index) {
 // Or we can just render all as View and toggle one.
 let editingBrandIndex = -1;
 
-function renderBrands(editIndex = -1) {
+window.updateBrandPreview = function(index) {
+    const url = document.getElementById(`brand-logo-${index}`).value;
+    const preview = document.getElementById(`brand-preview-${index}`);
+    if (preview) {
+        if (url && url.length > 5) {
+            preview.src = url;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+};
+
+window.renderBrands = function(editIndex = -1) {
     const list = document.getElementById('brandList');
     if (!list) return;
     
@@ -416,7 +429,7 @@ function renderBrands(editIndex = -1) {
                     <div>
                         <label class="form-label">Logo (URL ou Upload)</label>
                         <div style="display: flex; gap: 10px;">
-                            <input type="text" class="form-control" value="${brand.logo || ''}" id="brand-logo-${index}" readonly style="background: #333; color: #777;">
+                            <input type="text" class="form-control" value="${brand.logo || ''}" id="brand-logo-${index}" placeholder="https://..." onchange="updateBrandPreview(${index})">
                             <label class="btn-primary" style="cursor: pointer; margin: 0; white-space: nowrap;">
                                 <i class="fas fa-upload"></i> Upload
                                 <input type="file" style="display: none;" data-target="brand-logo-${index}" data-preview="brand-preview-${index}">
