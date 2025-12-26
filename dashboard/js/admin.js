@@ -121,9 +121,15 @@ function updateImagePreview(previewId, imageSrc) {
     const previewEl = document.getElementById(previewId);
     if (!previewEl) return;
 
+    let displaySrc = imageSrc;
+    // Fix relative paths for Admin Dashboard (assets/ -> ../assets/)
+    if (displaySrc && typeof displaySrc === 'string' && displaySrc.startsWith('assets/')) {
+        displaySrc = '../' + displaySrc;
+    }
+
     // Check if imageSrc is valid (not empty, not null)
-    if (imageSrc && imageSrc.length > 0) {
-        previewEl.src = imageSrc;
+    if (displaySrc && displaySrc.length > 0) {
+        previewEl.src = displaySrc;
         previewEl.style.display = 'block';
         // Remove emoji placeholder if it was added via JS (simplest is just to show image)
     } else {
@@ -274,6 +280,11 @@ function renderBrands() {
     }
     
     brands.forEach((brand, index) => {
+        let logoSrc = brand.logo;
+        if (logoSrc && typeof logoSrc === 'string' && logoSrc.startsWith('assets/')) {
+            logoSrc = '../' + logoSrc;
+        }
+
         const div = document.createElement('div');
         div.className = 'form-group card';
         div.style.padding = '15px';
@@ -293,7 +304,7 @@ function renderBrands() {
                     <input type="file" class="form-control" accept="image/*" onchange="handleBrandLogoUpload(this, ${index})">
                     <input type="hidden" id="brand-logo-${index}" value="${brand.logo || ''}">
                     <div style="margin-top: 10px; background: #333; padding: 5px; border-radius: 5px; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center;">
-                        ${brand.logo ? `<img src="${brand.logo}" id="brand-preview-${index}" style="max-height: 40px; max-width: 100%;">` : `<span id="brand-preview-text-${index}" style="font-size: 0.8rem; color: #aaa;">Sem logo</span><img id="brand-preview-${index}" style="display:none; max-height: 40px; max-width: 100%;">`}
+                        ${logoSrc ? `<img src="${logoSrc}" id="brand-preview-${index}" style="max-height: 40px; max-width: 100%;">` : `<span id="brand-preview-text-${index}" style="font-size: 0.8rem; color: #aaa;">Sem logo</span><img id="brand-preview-${index}" style="display:none; max-height: 40px; max-width: 100%;">`}
                     </div>
                 </div>
             </div>

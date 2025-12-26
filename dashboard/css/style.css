@@ -109,7 +109,8 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
 }
 
 .sidebar-header {
-    padding: 0 20px 20px;
+    height: var(--header-height);
+    padding: 0 20px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -120,7 +121,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 1px solid var(--primary);
+    border: 2px solid white;
 }
 
 .nav-menu {
@@ -192,7 +193,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     width: 35px;
     height: 35px;
     border-radius: 50%;
-    border: 1px solid var(--primary);
+    border: 2px solid white;
 }
 
 .user-info small {
