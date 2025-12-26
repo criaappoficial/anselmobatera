@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Dashboard Anselmo Cardoso</title>
+    <link rel="icon" type="image/png" href="../assets/fiveicon.png">
+    <link rel="apple-touch-icon" href="../assets/fiveicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <img src="../assets/logo.jpg" alt="Logo" class="auth-logo">
+            <h2>Painel Administrativo</h2>
+            <p style="color: var(--text-muted); margin-top: 10px;">Gerencie seu portfólio profissional</p>
+            
+            <button id="googleLoginBtn" class="google-btn">
+                <i class="fab fa-google"></i>
+                Entrar com Google
+            </button>
+            
+            <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted);">
+                Acesso restrito a administradores.
+            </p>
+            <p style="margin-top: 15px;">
+                <a href="../index.html" style="color: #ff5500; text-decoration: none; font-size: 0.9rem;">
+                    <i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Voltar para home
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script type="module" src="../js/firebase-config.js"></script>
+    <script type="module" src="../js/saas-engine.js"></script>
+    <script type="module">
+        import SaaS from '../js/saas-engine.js';
+        import { auth, onAuthStateChanged } from '../js/firebase-config.js';
+
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            // Google Login
+            SaaS.loginWithGoogle().then(user => {
+                // Redirect is handled by onAuthStateChanged or after ensureUserDoc
+                console.log("Login flow completed via button");
+            }).catch(err => {
+                console.error("Login button error:", err);
+            });
+        });
+        
+        // Wait for Auth Check
+        onAuthStateChanged(auth, user => {
+             if (user) {
+                 // ONLY redirect if user document creation is verified or we give it a moment
+                 // But better rely on the login promise for the FIRST login.
+                 // However, onAuthStateChanged fires immediately if session exists.
+                 
+                 // Let's check if we are already in the middle of a login action
+                 // For simplicity, we just redirect. The ensureUserDoc logic in saas-engine
+                 // should have run during the sign-in process.
+                 
+                 // If page reload, saas-engine init() runs ensureUserDoc? No, init() runs loadUserData.
+                 // We should ensure user doc exists even on simple reload if it's missing.
+                 SaaS.ensureUserDoc(user).then(() => {
+                     window.location.href = 'admin.html';
+                 });
+             }
+        });
+    </script>
+</body>
+</html>
