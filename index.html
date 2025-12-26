@@ -409,17 +409,24 @@
 
         .brand-badge {
             padding: 10px 25px;
-            background: var(--surface);
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid var(--border);
             border-radius: 50px;
             font-weight: 600;
             transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-badge i {
+            color: white; /* Or var(--primary) if preferred, but image shows white/light */
         }
 
         .brand-badge:hover {
             border-color: var(--primary);
             transform: translateY(-3px);
-            background: rgba(255, 85, 0, 0.1);
+            background: black;
         }
 
         /* Portfolio */
@@ -986,6 +993,25 @@
                 if(document.getElementById('about-text-container')) document.getElementById('about-text-container').innerHTML = `<p>${config.about.text.replace(/\n/g, '<br>')}</p>`;
                 const aboutImg = document.getElementById('about-img');
                 if(aboutImg && config.about.image) aboutImg.src = config.about.image;
+
+                // Brands
+                const brandsContainer = document.querySelector('.brands');
+                if (brandsContainer && config.brands) {
+                    brandsContainer.innerHTML = '';
+                    config.brands.forEach(brand => {
+                        const span = document.createElement('span');
+                        span.className = 'brand-badge';
+                        // Check if it has an icon property (font awesome class) or logo (image url)
+                        if (brand.logo) {
+                             span.innerHTML = `<img src="${brand.logo}" alt="${brand.name}" style="height: 20px; width: auto;"> ${brand.name}`;
+                        } else {
+                            // Default fallback or use icon property
+                            const iconClass = brand.icon || 'fas fa-star';
+                            span.innerHTML = `<i class="${iconClass}"></i> ${brand.name}`;
+                        }
+                        brandsContainer.appendChild(span);
+                    });
+                }
             }
         }
 

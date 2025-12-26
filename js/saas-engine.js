@@ -27,6 +27,11 @@ const SaaS = {
                 text: "Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, no groove e na musicalidade.\n\nAcredito que a escolha dos pratos e tambores é fundamental para definir a personalidade de cada performance. Por isso, trabalho com equipamentos de alta qualidade que oferecem timbres ricos e projeção equilibrada.",
                 image: "assets/about-drums.jpg"
             },
+            brands: [
+                { name: "Zeus Cymbals", icon: "fas fa-drum" },
+                { name: "Zildjian", icon: "fas fa-music" },
+                { name: "Avatar", icon: "fas fa-star" }
+            ],
             contact: {
                 whatsapp: "5511999999999",
                 email: "contato@anselmocardoso.com",
