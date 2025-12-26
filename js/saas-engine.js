@@ -22,6 +22,7 @@ const SaaS = {
                 { number: "100%", label: "Dedicação" }
             ],
             about: {
+                subtitle: "Minha História",
                 title: "Muito Mais Que Barulho",
                 text: "Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, no groove e na musicalidade.\n\nAcredito que a escolha dos pratos e tambores é fundamental para definir a personalidade de cada performance. Por isso, trabalho com equipamentos de alta qualidade que oferecem timbres ricos e projeção equilibrada.",
                 image: "assets/about-drums.jpg"

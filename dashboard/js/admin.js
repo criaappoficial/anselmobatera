@@ -81,6 +81,7 @@ window.addEventListener('saasConfigUpdated', (e) => {
     updateImagePreview('heroImagePreview', config.hero?.image);
 
     // About
+    if(document.getElementById('aboutSubtitle')) document.getElementById('aboutSubtitle').value = config.about?.subtitle || "";
     if(document.getElementById('aboutTitle')) document.getElementById('aboutTitle').value = config.about?.title || "";
     if(document.getElementById('aboutText')) document.getElementById('aboutText').value = config.about?.text || "";
     if(document.getElementById('aboutImage')) document.getElementById('aboutImage').value = config.about?.image || "";
@@ -300,6 +301,7 @@ document.getElementById('aboutForm').addEventListener('submit', async (e) => {
     showLoader();
     try {
         await SaaS.updateSection('about', {
+            subtitle: document.getElementById('aboutSubtitle').value,
             title: document.getElementById('aboutTitle').value,
             text: document.getElementById('aboutText').value,
             image: document.getElementById('aboutImage').value

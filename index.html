@@ -762,22 +762,22 @@
             <div class="about-grid">
                 <div class="about-text animate">
                     <div class="section-header">
-                        <span class="section-subtitle">Minha História</span>
-                        <h2 id="about-title" class="section-title">Muito Mais Que <span class="text-gradient">Barulho</span></h2>
-                    </div>
-                    <div id="about-text-container">
-                        <p>
-                            Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. 
-                            Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, 
-                            no groove e na musicalidade.
-                        </p>
-                    </div>
+                    <span class="section-subtitle" id="about-subtitle">Minha História</span>
+                    <h2 id="about-title" class="section-title">Muito Mais Que <span class="text-gradient">Barulho</span></h2>
+                </div>
+                <div id="about-text-container">
+                    <p>
+                        Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. 
+                        Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, 
+                        no groove e na musicalidade.
+                    </p>
                     <p>
                         Acredito que a escolha dos pratos e tambores é fundamental para definir a personalidade 
                         de cada performance. Por isso, trabalho com equipamentos de alta qualidade que oferecem 
                         timbres ricos e projeção equilibrada.
                     </p>
-                    <div class="brands">
+                </div>
+                <div class="brands">
                         <span class="brand-badge"><i class="fas fa-drum"></i> Zeus Cymbals</span>
                         <span class="brand-badge"><i class="fas fa-music"></i> Zildjian</span>
                         <span class="brand-badge"><i class="fas fa-star"></i> Avatar</span>
@@ -960,9 +960,11 @@
 
             // About
             if (config.about) {
+                if(document.getElementById('about-subtitle')) document.getElementById('about-subtitle').textContent = config.about.subtitle || "Minha História";
                 if(document.getElementById('about-title')) document.getElementById('about-title').innerHTML = config.about.title;
                 if(document.getElementById('about-text-container')) document.getElementById('about-text-container').innerHTML = `<p>${config.about.text.replace(/\n/g, '<br>')}</p>`;
-                // About Image?
+                const aboutImg = document.getElementById('about-img');
+                if(aboutImg && config.about.image) aboutImg.src = config.about.image;
             }
         }
 
