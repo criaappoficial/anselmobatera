@@ -76,6 +76,8 @@ window.addEventListener('saasConfigUpdated', (e) => {
     // Hero
     if(document.getElementById('heroTitle')) document.getElementById('heroTitle').value = config.hero?.title || "";
     if(document.getElementById('heroSubtitle')) document.getElementById('heroSubtitle').value = config.hero?.subtitle || "";
+    if(document.getElementById('heroOverlayTitle')) document.getElementById('heroOverlayTitle').value = config.hero?.overlayTitle || "";
+    if(document.getElementById('heroOverlaySubtitle')) document.getElementById('heroOverlaySubtitle').value = config.hero?.overlaySubtitle || "";
     if(document.getElementById('heroImage')) document.getElementById('heroImage').value = config.hero?.image || "";
     
     updateImagePreview('heroImagePreview', config.hero?.image);
@@ -93,13 +95,7 @@ window.addEventListener('saasConfigUpdated', (e) => {
     renderStats();
 
     // Gallery
-    if (config.gallery) {
-        for(let i=1; i<=4; i++) {
-            const val = config.gallery[`img${i}`] || "";
-            if(document.getElementById(`gallery${i}`)) document.getElementById(`gallery${i}`).value = val;
-            updateImagePreview(`gallery${i}Preview`, val);
-        }
-    }
+    renderGalleryInputs(config);
 
     // Style
     if (config.style) {
@@ -168,7 +164,60 @@ function updateImagePreview(previewId, imageSrc) {
     }
 }
 
-// Convert Image to Base64 (String)
+// Helper: Compress Image and Convert to Base64
+function compressImage(file, maxWidth = 1024, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const attemptCompression = (q, w) => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > w) {
+                        height = Math.round((height * w) / width);
+                        width = w;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', q);
+                    return dataUrl;
+                };
+
+                let currentQuality = quality;
+                let currentWidth = maxWidth;
+                let dataUrl = attemptCompression(currentQuality, currentWidth);
+                
+                // Recursive compression to target size
+                let attempts = 0;
+                // Target: ~120KB per image to allow 6 images + text in 1MB Firestore limit
+                while (dataUrl.length > 130000 && attempts < 6) { 
+                    currentQuality -= 0.15;
+                    currentWidth = Math.round(currentWidth * 0.70); // More aggressive reduction
+                    if (currentQuality < 0.2) currentQuality = 0.2;
+                    
+                    console.log(`Aggressive Compression: Quality ${currentQuality.toFixed(2)}, Width ${currentWidth}, Current Len ${dataUrl.length}`);
+                    dataUrl = attemptCompression(currentQuality, currentWidth);
+                    attempts++;
+                }
+
+                resolve(dataUrl);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+// Convert Image to Base64 (String) - Deprecated in favor of compressImage but kept for fallback
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -233,26 +282,141 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
 // Helper: Handle File Inputs
 const fileInputs = ['heroImage', 'aboutImage']; 
 
+// Custom Modal Implementation
+window.showCustomModal = function(title, message) {
+    // Remove existing if any
+    const existing = document.getElementById('custom-modal-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'custom-modal-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.background = 'rgba(0,0,0,0.85)';
+    overlay.style.zIndex = '100000';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.backdropFilter = 'blur(5px)';
+
+    const modal = document.createElement('div');
+    modal.style.background = 'var(--surface, #1e1e1e)';
+    modal.style.border = '1px solid var(--border, #333)';
+    modal.style.borderTop = '4px solid var(--danger, #ff4444)';
+    modal.style.borderRadius = '12px';
+    modal.style.padding = '30px';
+    modal.style.maxWidth = '450px';
+    modal.style.width = '90%';
+    modal.style.textAlign = 'center';
+    modal.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
+    modal.style.position = 'relative';
+
+    modal.innerHTML = `
+        <div style="font-size: 3rem; color: var(--danger, #ff4444); margin-bottom: 20px;">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 style="color: var(--text-main, #fff); margin-bottom: 15px; font-size: 1.4rem;">${title}</h3>
+        <p style="color: var(--text-muted, #ccc); margin-bottom: 25px; line-height: 1.5;">${message}</p>
+        <button id="modal-close-btn" class="btn-primary" style="padding: 12px 30px; border-radius: 50px; width: 100%;">Entendi, vou comprimir</button>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    document.getElementById('modal-close-btn').onclick = () => {
+        overlay.remove();
+    };
+    
+    // Close on click outside
+    overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.remove();
+    }
+};
+
 document.body.addEventListener('change', async (e) => {
     if (e.target.type === 'file') {
         const file = e.target.files[0];
         if (file) {
-            // Validate File Size (Max 800KB to be safe for Firestore 1MB limit with Base64 overhead)
-            const maxSize = 800 * 1024; // 800KB
-            if (file.size > maxSize) {
-                alert(`A imagem é muito grande (${(file.size / 1024).toFixed(0)}KB). O limite é 800KB. Por favor, comprima a imagem antes de enviar.`);
-                e.target.value = ''; // Clear input
-                return;
+            // Display Size Logic
+            let targetContainer = e.target.parentNode;
+            
+            // Fix for file inputs inside labels (like custom buttons)
+            if (targetContainer.tagName === 'LABEL') {
+                targetContainer = targetContainer.parentNode;
             }
 
-            showLoader('Processando Imagem...');
+            let sizeDisplay = targetContainer.querySelector('.file-size-display');
+            if (!sizeDisplay) {
+                sizeDisplay = document.createElement('div');
+                sizeDisplay.className = 'file-size-display';
+                sizeDisplay.style.fontSize = '0.85rem';
+                sizeDisplay.style.marginTop = '8px';
+                sizeDisplay.style.fontWeight = '500';
+                targetContainer.appendChild(sizeDisplay);
+            }
+            
+            const fileSizeKB = (file.size / 1024).toFixed(0);
+            
+            // Validate File Size (Initial check for huge files > 5MB that might crash browser)
+            const absoluteMax = 5 * 1024 * 1024; // 5MB
+            if (file.size > absoluteMax) {
+                 sizeDisplay.textContent = `Tamanho da imagem: ${fileSizeKB}KB`;
+                 sizeDisplay.style.color = 'var(--danger)';
+                 sizeDisplay.innerHTML += ' <i class="fas fa-times-circle"></i> (Muito grande)';
+                 showCustomModal('Imagem Gigante', 'A imagem é maior que 5MB. Por favor, escolha uma imagem menor.');
+                 e.target.value = '';
+                 return;
+            }
+
+            showLoader('Otimizando Imagem...');
             try {
-                const base64String = await fileToBase64(file);
+                // Compress Image
+                // Max Width: 1024px (sufficient for HD web)
+                // Quality: 0.7 (good balance)
+                const base64String = await compressImage(file, 1024, 0.7);
+                
+                // Check Final Size of Base64 String
+                // Base64 size is approx 1.33 * binary size. 
+                // We want final payload to be small. 
+                // Firestore limit is 1MB for the WHOLE document.
+                // Let's aim for max 300KB per image (Base64 length ~400,000 chars)
+                
+                const finalSizeKB = (base64String.length * 0.75 / 1024).toFixed(0);
+                sizeDisplay.textContent = `Tamanho: ${fileSizeKB}KB ➝ ${finalSizeKB}KB (Otimizado)`;
+                
+                if (base64String.length > 400000) { // approx 300KB binary
+                    sizeDisplay.style.color = 'var(--danger)';
+                    sizeDisplay.innerHTML += ' <i class="fas fa-times-circle"></i> (Ainda grande)';
+                    showCustomModal(
+                        'Imagem Ainda Grande', 
+                        `Mesmo após a otimização, a imagem ficou com <strong>${finalSizeKB}KB</strong>.<br><br>Para evitar erros de salvamento, tente uma imagem mais simples ou com menor resolução.`
+                    );
+                    e.target.value = '';
+                    hideLoader();
+                    return;
+                }
+                
+                sizeDisplay.style.color = 'var(--success, #2ecc71)';
+                sizeDisplay.innerHTML += ' <i class="fas fa-check-circle"></i> (OK)';
+
                 const targetId = e.target.getAttribute('data-target'); 
                 if (targetId) {
                     const targetInput = document.getElementById(targetId);
                     if (targetInput) {
                         targetInput.value = base64String;
+                        
+                        // Update status text if it exists (for gallery)
+                        if (targetId.startsWith('gallery-img-')) {
+                            const idNum = targetId.split('-')[2];
+                            const statusEl = document.getElementById(`gallery-status-${idNum}`);
+                            if (statusEl) {
+                                statusEl.innerHTML = `<span style="color: var(--success);"><i class="fas fa-check"></i> Pronta para Salvar (${finalSizeKB}KB)</span>`;
+                            }
+                        }
+
                         // Preview
                         const previewId = e.target.getAttribute('data-preview');
                         const previewEl = document.getElementById(previewId);
@@ -285,6 +449,8 @@ document.getElementById('heroForm').addEventListener('submit', async (e) => {
         await SaaS.updateSection('hero', {
             title: document.getElementById('heroTitle').value,
             subtitle: document.getElementById('heroSubtitle').value,
+            overlayTitle: document.getElementById('heroOverlayTitle').value,
+            overlaySubtitle: document.getElementById('heroOverlaySubtitle').value,
             image: document.getElementById('heroImage').value
         });
         alert('Seção Hero atualizada com sucesso!');
@@ -599,20 +765,130 @@ document.getElementById('galleryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoader();
     try {
-        await SaaS.updateSection('gallery', {
-            img1: document.getElementById('gallery1').value,
-            img2: document.getElementById('gallery2').value,
-            img3: document.getElementById('gallery3').value,
-            img4: document.getElementById('gallery4').value
-        });
-        alert('Galeria atualizada!');
+        const newGallery = [];
+        let totalSize = 0;
+        
+        for(let i=1; i<=6; i++) {
+            const imgInput = document.getElementById(`gallery-img-${i}`);
+            const titleInput = document.getElementById(`gallery-title-${i}`);
+            const descInput = document.getElementById(`gallery-desc-${i}`);
+            
+            if (imgInput && titleInput && descInput) {
+                const imgVal = imgInput.value;
+                totalSize += imgVal.length;
+                
+                newGallery.push({
+                    image: imgVal,
+                    title: titleInput.value,
+                    description: descInput.value
+                });
+            }
+        }
+        
+        // Validation: Firestore 1MB limit (approx 1,048,576 bytes)
+        // Base64 chars are 1 byte each in UTF-8 usually, but safe limit is 1M chars.
+        // We set a safe margin (950KB)
+        if (totalSize > 950000) {
+             throw new Error("Total gallery size exceeds limit");
+        }
+
+        await SaaS.updateSection('gallery', newGallery);
+        alert('Galeria atualizada com sucesso!');
     } catch (err) {
         console.error(err);
-        alert('Erro ao atualizar galeria.');
+        const errorMsg = err.message || JSON.stringify(err);
+        if (errorMsg.includes("Total gallery size exceeds limit") || errorMsg.includes("exceeds the maximum allowed size")) {
+            showCustomModal("Galeria Muito Pesada", "O tamanho total das imagens excede o limite do banco de dados (1MB).<br><br>Isso acontece quando muitas imagens de alta qualidade são enviadas.<br>Tente substituir algumas imagens por versões menores.");
+        } else {
+            alert('Erro ao atualizar galeria: ' + errorMsg);
+        }
     } finally {
         hideLoader();
     }
 });
+
+function renderGalleryInputs(providedConfig = null) {
+    const config = providedConfig || SaaS.getConfig();
+    if (!config) return;
+    
+    const container = document.getElementById('gallery-inputs-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    let gallery = config.gallery;
+    // Migration check: if object (old format), convert to array
+    if (!Array.isArray(gallery) && gallery) {
+        gallery = [
+            { image: gallery.img1 || "", title: "Meu Setup", description: "Visão geral do kit" },
+            { image: gallery.img2 || "", title: "Em Ação", description: "Perspectiva da câmera" },
+            { image: gallery.img3 || "", title: "Detalhes", description: "Timbres e texturas" },
+            { image: gallery.img4 || "", title: "Atmosfera", description: "Foco e concentração" }
+        ];
+    }
+    // Ensure 6 items
+    gallery = gallery || [];
+    while(gallery.length < 6) {
+        gallery.push({ image: "", title: `Novo Item`, description: "Descrição" });
+    }
+    
+    gallery.slice(0, 6).forEach((item, index) => {
+        const i = index + 1;
+        const div = document.createElement('div');
+        div.className = 'form-group card';
+        div.style.padding = '20px';
+        div.style.background = 'var(--bg-darker)';
+        div.style.border = '1px solid rgba(255,255,255,0.05)';
+        div.style.borderRadius = '12px';
+        div.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+        div.onmouseenter = () => { div.style.transform = 'translateY(-2px)'; div.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)'; };
+        div.onmouseleave = () => { div.style.transform = 'translateY(0)'; div.style.boxShadow = 'none'; };
+
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="background: var(--primary); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold;">${i}</span>
+                    <strong style="color: white; font-size: 1rem;">Item da Galeria</strong>
+                </div>
+                <span style="font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px;">Momentos em Ação</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 100px 1fr; gap: 20px; align-items: start;">
+                <!-- Image Preview / Upload Area -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="width: 100%; aspect-ratio: 1/1; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; position: relative; border: 2px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; transition: border-color 0.3s;">
+                        <img id="gallery-preview-${i}" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <span id="gallery-preview-${i}-placeholder" style="color: rgba(255,255,255,0.2); font-size: 1.5rem;"><i class="fas fa-image"></i></span>
+                    </div>
+                    
+                    <label class="btn-primary" style="font-size: 0.75rem; padding: 6px; text-align: center; cursor: pointer; width: 100%; border-radius: 6px; display: block;">
+                        <i class="fas fa-upload"></i> Escolher Foto
+                        <input type="file" style="display: none;" id="gallery-file-${i}" accept="image/*" data-target="gallery-img-${i}" data-preview="gallery-preview-${i}">
+                    </label>
+                    <input type="hidden" id="gallery-img-${i}" value="${item.image || ''}">
+                    <div id="gallery-status-${i}" style="font-size: 0.7rem; color: #888; margin-top: 5px;">
+                        ${item.image && item.image.length > 100 ? `<span style="color: var(--success);"><i class="fas fa-check"></i> Imagem Salva (${Math.round(item.image.length/1024)}KB)</span>` : '<span style="color: #666;">Sem imagem</span>'}
+                    </div>
+                </div>
+
+                <!-- Text Inputs -->
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem; color: #aaa; margin-bottom: 4px;">Título</label>
+                        <input type="text" class="form-control" id="gallery-title-${i}" value="${item.title || ''}" placeholder="Ex: Show no Rock in Rio" style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); font-size: 0.9rem; padding: 8px 12px;">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem; color: #aaa; margin-bottom: 4px;">Descrição</label>
+                        <input type="text" class="form-control" id="gallery-desc-${i}" value="${item.description || ''}" placeholder="Ex: Foto por @fotografo" style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); font-size: 0.9rem; padding: 8px 12px;">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        
+        // Update preview
+        updateImagePreview(`gallery-preview-${i}`, item.image);
+    });
+}
 
 document.getElementById('styleForm').addEventListener('submit', async (e) => {
     e.preventDefault();

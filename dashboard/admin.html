@@ -120,6 +120,14 @@
                                 <input type="hidden" id="heroImage">
                                 <img id="heroImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 5px; display: none;">
                             </div>
+                            <div class="form-group">
+                                <label class="form-label">Título do Overlay (Sobre a Imagem)</label>
+                                <input type="text" class="form-control" id="heroOverlayTitle" placeholder="Ex: Próximo Show">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Subtítulo do Overlay</label>
+                                <input type="text" class="form-control" id="heroOverlaySubtitle" placeholder="Ex: 15/10 - Blue Note SP">
+                            </div>
                             <button type="submit" class="btn-primary">Salvar Alterações</button>
                         </form>
                     </div>
@@ -192,31 +200,8 @@
                             <h4>Galeria de Fotos</h4>
                         </div>
                         <form id="galleryForm">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                <div class="form-group">
-                                    <label class="form-label">Imagem 1 (Meu Setup)</label>
-                                    <input type="file" class="form-control" id="gallery1File" accept="image/*" data-target="gallery1" data-preview="gallery1Preview">
-                                    <input type="hidden" id="gallery1">
-                                    <img id="gallery1Preview" src="" style="max-width: 100%; margin-top: 10px; border-radius: 5px; display: none;">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Imagem 2 (Em Ação)</label>
-                                    <input type="file" class="form-control" id="gallery2File" accept="image/*" data-target="gallery2" data-preview="gallery2Preview">
-                                    <input type="hidden" id="gallery2">
-                                    <img id="gallery2Preview" src="" style="max-width: 100%; margin-top: 10px; border-radius: 5px; display: none;">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Imagem 3 (Detalhes)</label>
-                                    <input type="file" class="form-control" id="gallery3File" accept="image/*" data-target="gallery3" data-preview="gallery3Preview">
-                                    <input type="hidden" id="gallery3">
-                                    <img id="gallery3Preview" src="" style="max-width: 100%; margin-top: 10px; border-radius: 5px; display: none;">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Imagem 4 (Atmosfera)</label>
-                                    <input type="file" class="form-control" id="gallery4File" accept="image/*" data-target="gallery4" data-preview="gallery4Preview">
-                                    <input type="hidden" id="gallery4">
-                                    <img id="gallery4Preview" src="" style="max-width: 100%; margin-top: 10px; border-radius: 5px; display: none;">
-                                </div>
+                            <div id="gallery-inputs-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <!-- Generated via admin.js -->
                             </div>
                             <button type="submit" class="btn-primary" style="margin-top: 20px;">Salvar Galeria</button>
                         </form>

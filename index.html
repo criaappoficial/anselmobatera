@@ -468,7 +468,9 @@
             transition: var(--transition);
         }
 
-        .portfolio-card:hover .portfolio-info {
+        /* Show info on hover OR when the card is active (visible on screen) */
+        .portfolio-card:hover .portfolio-info,
+        .portfolio-card.active .portfolio-info {
             transform: translateY(0);
             opacity: 1;
         }
@@ -805,33 +807,13 @@
                 <h2 class="section-title">Momentos em <span class="text-gradient">Ação</span></h2>
             </div>
             
-            <div class="portfolio-grid">
+            <div id="gallery-grid" class="portfolio-grid">
+                <!-- Content will be loaded dynamically -->
                 <div class="portfolio-card animate">
                     <img id="gallery-img-1" src="assets/setup-top.jpg" alt="Setup Completo">
                     <div class="portfolio-info">
                         <h3>Meu Setup</h3>
                         <p>Visão geral do kit</p>
-                    </div>
-                </div>
-                <div class="portfolio-card animate">
-                    <img id="gallery-img-2" src="assets/camera-view.jpg" alt="Gravação">
-                    <div class="portfolio-info">
-                        <h3>Em Ação</h3>
-                        <p>Perspectiva da câmera</p>
-                    </div>
-                </div>
-                <div class="portfolio-card animate">
-                    <img id="gallery-img-3" src="assets/setup-side.jpg" alt="Detalhes">
-                    <div class="portfolio-info">
-                        <h3>Detalhes</h3>
-                        <p>Timbres e texturas</p>
-                    </div>
-                </div>
-                <div class="portfolio-card animate">
-                    <img id="gallery-img-4" src="assets/setup-mood.jpg" alt="Atmosfera">
-                    <div class="portfolio-info">
-                        <h3>Atmosfera</h3>
-                        <p>Foco e concentração</p>
                     </div>
                 </div>
             </div>
@@ -958,6 +940,89 @@
                 // We need an ID for the image.
                 const heroImg = document.querySelector('.hero-image img');
                 if(heroImg && config.hero.image) heroImg.src = config.hero.image;
+
+                // Hero Overlay Text
+                const overlayTextEl = document.getElementById('hero-overlay-text');
+                if(overlayTextEl) {
+                    const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
+                    const hasSubtitle = config.hero.overlaySubtitle && config.hero.overlaySubtitle.trim() !== "";
+                    
+                    if (hasTitle || hasSubtitle) {
+                        let html = '';
+                        if (hasTitle) html += `<div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 2px;">${config.hero.overlayTitle}</div>`;
+                        if (hasSubtitle) html += `<div style="font-size: 0.9rem; opacity: 0.9;">${config.hero.overlaySubtitle}</div>`;
+                        
+                        overlayTextEl.innerHTML = html;
+                        overlayTextEl.style.display = 'block';
+                    } else {
+                        overlayTextEl.style.display = 'none';
+                    }
+                }
+            }
+
+            // Gallery
+            const galleryContainer = document.getElementById('gallery-grid');
+            if (galleryContainer && config.gallery) {
+                galleryContainer.innerHTML = '';
+                
+                let galleryItems = config.gallery;
+                // Migration support for old format
+                if (!Array.isArray(galleryItems)) {
+                    galleryItems = [
+                        { image: galleryItems.img1, title: "Meu Setup", description: "Visão geral do kit" },
+                        { image: galleryItems.img2, title: "Em Ação", description: "Perspectiva da câmera" },
+                        { image: galleryItems.img3, title: "Detalhes", description: "Timbres e texturas" },
+                        { image: galleryItems.img4, title: "Atmosfera", description: "Foco e concentração" }
+                    ];
+                }
+
+                // Ensure 6 items for display
+                while (galleryItems.length < 6) {
+                    galleryItems.push({ title: "Disponível", description: "Espaço para nova foto", image: "" });
+                }
+                
+                galleryItems.forEach((item, index) => {
+                    // Always render the card, even if image is missing
+                    
+                    const div = document.createElement('div');
+                    div.className = 'portfolio-card animate';
+                    
+                    // Logic for Image or Placeholder
+                    let imageContent = '';
+                    // Check if image exists and is a valid string (basic check)
+                    if (item.image && typeof item.image === 'string' && item.image.trim().length > 20) {
+                        imageContent = `<img id="gallery-img-${index}" src="${item.image}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentNode.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#222;color:#666;\'><i class=\'fas fa-broken-image\' style=\'font-size:3rem;\'></i></div>';">`;
+                    } else {
+                        // Placeholder Icon
+                        imageContent = `
+                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2);">
+                                <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                                <span style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Sem Imagem</span>
+                            </div>
+                        `;
+                    }
+                    
+                    div.innerHTML = `
+                        ${imageContent}
+                        <div class="portfolio-info">
+                            <h3>${item.title || "Sem Título"}</h3>
+                            <p>${item.description || "..."}</p>
+                        </div>
+                    `;
+                    galleryContainer.appendChild(div);
+                });
+                
+                // Re-attach observer to new elements
+                if (typeof observer !== 'undefined') {
+                    document.querySelectorAll('#gallery-grid .animate').forEach(el => observer.observe(el));
+                } else {
+                    // Fallback if observer is not ready yet
+                    setTimeout(() => {
+                         document.querySelectorAll('#gallery-grid .animate').forEach(el => {
+                             el.classList.add('active'); // Force visible just in case
+                         });
+                    }, 500);
+                }
             }
 
             // Stats

@@ -14,7 +14,9 @@ const SaaS = {
                 title: "Ritmo, Paixão e Excelência",
                 subtitle: "Mais de 25 anos criando grooves poderosos e dinâmicos. Transformando música em experiência através da bateria.",
                 buttonText: "Entrar em Contato",
-                image: "assets/performance.jpg"
+                image: "assets/performance.jpg",
+                overlayTitle: "Novo Show",
+                overlaySubtitle: "15/10/2024"
             },
             stats: [
                 { number: "25+", label: "Anos de Estrada" },
@@ -44,6 +46,38 @@ const SaaS = {
                 { id: 1, title: "Show Corporativo", price: "A consultar", features: ["2h de show", "Equipamento próprio", "Repertório personalizado"] },
                 { id: 2, title: "Casamentos", price: "A consultar", features: ["Cerimônia e Festa", "Banda completa ou Trio", "Reunião de alinhamento"] },
                 { id: 3, title: "Aulas Particulares", price: "R$ 150/h", features: ["Técnica e Leitura", "Estúdio climatizado", "Material incluso"] }
+            ],
+            gallery: [
+                {
+                    image: "assets/setup-top.jpg",
+                    title: "Meu Setup",
+                    description: "Visão geral do kit"
+                },
+                {
+                    image: "assets/camera-view.jpg",
+                    title: "Em Ação",
+                    description: "Perspectiva da câmera"
+                },
+                {
+                    image: "assets/setup-side.jpg",
+                    title: "Detalhes",
+                    description: "Timbres e texturas"
+                },
+                {
+                    image: "assets/setup-mood.jpg",
+                    title: "Atmosfera",
+                    description: "Foco e concentração"
+                },
+                {
+                    image: "",
+                    title: "Novo Item 5",
+                    description: "Descrição do item 5"
+                },
+                {
+                    image: "",
+                    title: "Novo Item 6",
+                    description: "Descrição do item 6"
+                }
             ],
             theme: {
                 primaryColor: "#ff5500"
@@ -156,12 +190,31 @@ const SaaS = {
 
     // Public Load (for Index.html)
     loadPublicConfig: function() {
-        // Check if there's a cached config in LocalStorage for faster load
+        // 1. Try LocalStorage for instant load
         const cached = localStorage.getItem('saas_config');
         if (cached) {
             this.currentConfig = JSON.parse(cached);
             window.dispatchEvent(new CustomEvent('saasConfigUpdated', { detail: this.currentConfig }));
         }
+
+        // 2. Fetch Live from Firestore (Owner's Config)
+        // Hardcoded UID for this single-tenant instance
+        const OWNER_UID = '2IlpHLltgjWUOBpPTXePBVmVPgK2'; 
+        
+        getDoc(doc(db, 'sites', OWNER_UID)).then(docSnap => {
+            if (docSnap.exists()) {
+                const liveConfig = docSnap.data();
+                this.currentConfig = liveConfig;
+                
+                // Update LocalStorage to keep it fresh
+                localStorage.setItem('saas_config', JSON.stringify(liveConfig));
+                
+                // Dispatch update
+                window.dispatchEvent(new CustomEvent('saasConfigUpdated', { detail: liveConfig }));
+            }
+        }).catch(err => {
+            console.error("Error fetching live config:", err);
+        });
     },
 
     // Content Management Methods
