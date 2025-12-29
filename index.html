@@ -15,6 +15,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* Preloader */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 85, 0, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Variáveis */
         :root {
             --primary: #ff5500;
@@ -49,6 +76,15 @@
             color: var(--text-main);
             line-height: 1.7;
             overflow-x: hidden;
+        }
+
+        /* Initial Hide of Content to prevent FOUC */
+        main, header, footer {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        body.loaded main, body.loaded header, body.loaded footer {
+            opacity: 1;
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -718,12 +754,17 @@
 </head>
 <body>
 
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
+
     <!-- Header -->
     <header id="header">
         <div class="container">
             <nav>
                 <a href="#" class="logo">
-                    <img src="assets/logo.png" alt="Anselmo Cardoso" style="height: 50px;">
+                    <img src="" alt="Logo" id="header-logo" style="height: 50px;">
                 </a>
                 <div class="hamburger" id="hamburger">
                     <i class="fas fa-bars"></i>
@@ -734,9 +775,9 @@
                     <li><a href="#portfolio" class="nav-link">Portfólio</a></li>
                     <li><a href="#styles" class="nav-link">Estilos</a></li>
                     <li><a href="#videos" class="nav-link">Vídeos</a></li>
-                    <li>
+                    <li id="login-nav-item">
                         <span style="color: var(--text-muted); margin-right: 15px;">|</span>
-                        <a href="dashboard/login.html" class="nav-link">Login</a>
+                        <a href="dashboard/login.html" class="nav-link" id="login-link">Login</a>
                     </li>
                 </ul>
             </nav>
@@ -749,10 +790,8 @@
         <div class="hero-overlay"></div>
         <div class="container hero-container">
             <div class="hero-text">
-                <h3 id="hero-title" class="animate" style="font-weight: 300; margin-bottom: 20px; color: white;">Ritmo, Paixão e <span class="text-gradient">Excelência</span></h3>
+                <h3 id="hero-title" class="animate" style="font-weight: 300; margin-bottom: 20px; color: white;"></h3>
                 <p id="hero-subtitle" class="animate">
-                    Mais de 25 anos criando grooves poderosos e dinâmicos. 
-                    Transformando música em experiência através da bateria.
                 </p>
                 <div class="animate" style="margin-top: 30px;">
                     <a href="#contact" class="btn">
@@ -768,7 +807,7 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="assets/performance.jpg" alt="Anselmo Cardoso na Bateria">
+                <img src="" alt="Drummer" id="hero-img-el">
             </div>
         </div>
     </section>
@@ -811,29 +850,18 @@
             <div class="about-grid">
                 <div class="about-text animate">
                     <div class="section-header">
-                    <span class="section-subtitle" id="about-subtitle">Minha História</span>
-                    <h2 id="about-title" class="section-title">Muito Mais Que <span class="text-gradient">Barulho</span></h2>
+                    <span class="section-subtitle" id="about-subtitle"></span>
+                    <h2 id="about-title" class="section-title"></h2>
                 </div>
                 <div id="about-text-container">
-                    <p>
-                        Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. 
-                        Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, 
-                        no groove e na musicalidade.
-                    </p>
-                    <p>
-                        Acredito que a escolha dos pratos e tambores é fundamental para definir a personalidade 
-                        de cada performance. Por isso, trabalho com equipamentos de alta qualidade que oferecem 
-                        timbres ricos e projeção equilibrada.
-                    </p>
+                    <!-- Text will be injected by JS -->
                 </div>
                 <div class="brands">
-                        <span class="brand-badge"><i class="fas fa-drum"></i> Zeus Cymbals</span>
-                        <span class="brand-badge"><i class="fas fa-music"></i> Zildjian</span>
-                        <span class="brand-badge"><i class="fas fa-star"></i> Avatar</span>
-                    </div>
+                    <!-- Brands will be injected by JS -->
+                </div>
                 </div>
                 <div class="about-img animate">
-                    <img id="about-img" src="assets/about-drums.jpg" alt="Setup de Bateria">
+                    <img id="about-img" src="" alt="About Image">
                 </div>
             </div>
         </div>
@@ -849,13 +877,6 @@
             
             <div id="gallery-grid" class="portfolio-grid">
                 <!-- Content will be loaded dynamically -->
-                <div class="portfolio-card animate">
-                    <img id="gallery-img-1" src="assets/setup-top.jpg" alt="Setup Completo">
-                    <div class="portfolio-info">
-                        <h3>Meu Setup</h3>
-                        <p>Visão geral do kit</p>
-                    </div>
-                </div>
             </div>
             
             <div style="text-align: center; margin-top: 50px;">
@@ -903,12 +924,7 @@
             </div>
             
             <div id="video-gallery" class="video-container animate">
-                <div class="video-wrapper">
-                    <video id="promoVideo" controls preload="metadata">
-                        <source src="assets/video.mp4#t=2" type="video/mp4">
-                        Seu navegador não suporta a reprodução de vídeos.
-                    </video>
-                </div>
+                <!-- Video will be injected by JS -->
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
@@ -946,9 +962,9 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <a href="#" class="footer-logo">Anselmo<span class="text-gradient">Cardoso</span></a>
+            <a href="#" class="footer-logo">Ritmo, Paixão e <span class="text-gradient">Excelência</span></a>
             <div class="footer-copy">
-                &copy; 2023 Anselmo Cardoso. Todos os direitos reservados.
+                &copy; 2025 Ritmo, Paixão e Excelência. Todos os direitos reservados.
                 <div id="debug-info" style="font-size: 0.7rem; opacity: 0.5; margin-top: 10px;"></div>
             </div>
         </div>
@@ -959,6 +975,17 @@
     <script type="module" src="js/loader.js"></script>
     <script>
         // SaaS Config Loader
+        function hidePreloader() {
+            const preloader = document.getElementById('preloader');
+            if (preloader && preloader.style.opacity !== '0') {
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    document.body.classList.add('loaded');
+                }, 500);
+            }
+        }
+
         function renderDynamicContent(config) {
             if (!config) return;
 
@@ -1165,10 +1192,106 @@
                     });
                 }
             }
+
+            // Footer Dynamic Update
+            // PRIORITIZE USER DATA (Account Name) over Config Title
+            let footerName = "Ritmo, Paixão e Excelência"; // Fallback requested by user
+            
+            if (typeof globalUserData !== 'undefined' && globalUserData && globalUserData.name) {
+                footerName = globalUserData.name;
+
+                // LOGIN BUTTON -> PROFILE IMAGE
+                const loginNavItem = document.getElementById('login-nav-item');
+                // We check if we haven't already replaced it (to avoid loop/flicker if re-running)
+                const existingImg = loginNavItem ? loginNavItem.querySelector('img') : null;
+
+                if (loginNavItem && globalUserData.photo && !existingImg) {
+                    // Create Profile Link Container
+                    loginNavItem.innerHTML = ''; // Clear existing text "Login"
+                    loginNavItem.style.display = 'flex';
+                    loginNavItem.style.alignItems = 'center';
+
+                    // Divider
+                    const divider = document.createElement('span');
+                    divider.style.color = 'var(--text-muted)';
+                    divider.style.marginRight = '15px';
+                    divider.textContent = '|';
+                    loginNavItem.appendChild(divider);
+
+                    // Profile Link with Image
+                    const profileLink = document.createElement('a');
+                    profileLink.href = 'dashboard/admin.html'; // Go to dashboard
+                    profileLink.className = 'nav-link';
+                    profileLink.style.display = 'flex';
+                    profileLink.style.alignItems = 'center';
+                    profileLink.style.padding = '0';
+                    profileLink.title = 'Ir para o Painel';
+
+                    const img = document.createElement('img');
+                    img.src = globalUserData.photo;
+                    img.alt = globalUserData.name;
+                    img.style.width = '35px';
+                    img.style.height = '35px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    img.style.border = '2px solid var(--primary)';
+                    
+                    profileLink.appendChild(img);
+                    loginNavItem.appendChild(profileLink);
+                }
+
+                // REPLACE FOOTER LOGO WITH PROFILE IMAGE IN FOOTER
+                const footerLogoLink = document.querySelector('.footer-logo');
+                if (footerLogoLink && globalUserData.photo) {
+                    footerLogoLink.innerHTML = '';
+                    
+                    const footerImg = document.createElement('img');
+                    footerImg.src = globalUserData.photo;
+                    footerImg.alt = globalUserData.name;
+                    footerImg.style.height = '50px'; // Match header logo height roughly
+                    footerImg.style.width = '50px';
+                    footerImg.style.borderRadius = '50%';
+                    footerImg.style.objectFit = 'cover';
+                    footerImg.style.border = '2px solid var(--primary)';
+                    footerImg.style.marginRight = '10px';
+                    footerImg.style.verticalAlign = 'middle';
+                    
+                    const nameSpan = document.createElement('span');
+                    // Split name for effect
+                    const parts = footerName.split(' ');
+                    if (parts.length >= 2) {
+                        const last = parts.pop();
+                        const first = parts.join(' ');
+                        nameSpan.innerHTML = `${first}<span class="text-gradient">${last}</span>`;
+                    } else {
+                        nameSpan.innerHTML = `<span class="text-gradient">${footerName}</span>`;
+                    }
+
+                    footerLogoLink.appendChild(footerImg);
+                    footerLogoLink.appendChild(nameSpan);
+                    
+                    // Footer Copy Update
+                    const footerCopyEl = document.querySelector('.footer-copy');
+                    if (footerCopyEl) {
+                        const year = new Date().getFullYear();
+                        footerCopyEl.innerHTML = `&copy; ${year} ${footerName}. Todos os direitos reservados.
+                        <div id="debug-info" style="font-size: 0.7rem; opacity: 0.5; margin-top: 10px;"></div>`;
+                    }
+                }
+
+            } else if (config.hero && config.hero.title) {
+                 // Fallback to title if it looks like a name
+                 const titleText = config.hero.title.replace(/<[^>]*>?/gm, '');
+                 const defaultTitles = ["Ritmo, Paixão e Excelência", "Ritmo, Paixão eExcelência"];
+                 if (!defaultTitles.includes(titleText)) {
+                     footerName = titleText;
+                 }
+            }
         }
 
         window.addEventListener('saasConfigUpdated', (e) => {
             renderDynamicContent(e.detail);
+            hidePreloader();
         });
 
         // Initial Check (in case event fired before listener)
@@ -1176,6 +1299,7 @@
         if (cachedConfig) {
             try {
                 renderDynamicContent(JSON.parse(cachedConfig));
+                hidePreloader();
             } catch(e) { console.error("Error parsing cached config", e); }
         }
 
