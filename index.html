@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfólio - Anselmo Cardoso | Baterista Profissional</title>
-    <link rel="icon" type="image/jpg" href="assets/logo.png">
+    <link rel="icon" type="image/png" href="assets/fiveicon.png">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +15,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* Preloader */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 85, 0, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Variáveis */
         :root {
             --primary: #ff5500;
@@ -49,6 +76,15 @@
             color: var(--text-main);
             line-height: 1.7;
             overflow-x: hidden;
+        }
+
+        /* Initial Hide of Content to prevent FOUC */
+        main, header, footer {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        body.loaded main, body.loaded header, body.loaded footer {
+            opacity: 1;
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -171,6 +207,7 @@
         .nav-menu {
             display: flex;
             gap: 30px;
+            align-items: center;
         }
 
         .nav-link {
@@ -210,8 +247,9 @@
 
         /* Hero */
         .hero {
-            height: 100vh;
+            height: 100vh; /* Mantém a altura total da viewport */
             min-height: 700px;
+            padding-top: 100px; /* Adiciona espaço para a navbar fixa */
             position: relative;
             display: flex;
             align-items: center;
@@ -248,6 +286,7 @@
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
+            height: 100%; /* Ocupa a altura disponível */
         }
 
         .hero-text {
@@ -261,15 +300,19 @@
             flex: 1;
             display: flex;
             justify-content: center;
+            align-items: center; /* Centraliza verticalmente */
             z-index: 1;
             animation: fadeIn Up 1s ease-out 0.3s;
+            height: 100%; /* Garante altura para alinhamento */
         }
 
         .hero-image img {
             border-radius: 20px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             max-width: 100%;
-            height: auto;
+            max-height: 80vh; /* Limita a altura para não estourar a tela */
+            width: auto; /* Mantém proporção */
+            object-fit: contain; /* Ajusta dentro do espaço */
             border: 1px solid var(--border);
             transform: rotate(3deg);
             transition: var(--transition);
@@ -408,17 +451,24 @@
 
         .brand-badge {
             padding: 10px 25px;
-            background: var(--surface);
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid var(--border);
             border-radius: 50px;
             font-weight: 600;
             transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-badge i {
+            color: white; /* Or var(--primary) if preferred, but image shows white/light */
         }
 
         .brand-badge:hover {
             border-color: var(--primary);
             transform: translateY(-3px);
-            background: rgba(255, 85, 0, 0.1);
+            background: black;
         }
 
         /* Portfolio */
@@ -460,7 +510,9 @@
             transition: var(--transition);
         }
 
-        .portfolio-card:hover .portfolio-info {
+        /* Show info on hover OR when the card is active (visible on screen) */
+        .portfolio-card:hover .portfolio-info,
+        .portfolio-card.active .portfolio-info {
             transform: translateY(0);
             opacity: 1;
         }
@@ -518,25 +570,27 @@
         .video-container {
             max-width: 900px;
             margin: 0 auto;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 1px solid var(--border);
         }
 
         .video-wrapper {
             position: relative;
-            width: 100%;
-            height: auto;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio (9 / 16 = 0.5625) */
+            height: 0;
             background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .video-wrapper video {
+        .video-wrapper video,
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: auto;
+            height: 100%;
             border: none;
             display: block;
-            max-height: 80vh;
         }
 
         /* Contact */
@@ -700,12 +754,17 @@
 </head>
 <body>
 
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
+
     <!-- Header -->
     <header id="header">
         <div class="container">
             <nav>
                 <a href="#" class="logo">
-                    <img src="assets/logo.png" alt="Anselmo Cardoso" style="height: 50px;">
+                    <img src="" alt="Logo" id="header-logo" style="height: 50px;">
                 </a>
                 <div class="hamburger" id="hamburger">
                     <i class="fas fa-bars"></i>
@@ -716,7 +775,10 @@
                     <li><a href="#portfolio" class="nav-link">Portfólio</a></li>
                     <li><a href="#styles" class="nav-link">Estilos</a></li>
                     <li><a href="#videos" class="nav-link">Vídeos</a></li>
-                    <li><a href="#contact" class="nav-link">Contato</a></li>
+                    <li id="login-nav-item">
+                        <span style="color: var(--text-muted); margin-right: 15px;">|</span>
+                        <a href="dashboard/login.html" class="nav-link" id="login-link">Login</a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -728,10 +790,8 @@
         <div class="hero-overlay"></div>
         <div class="container hero-container">
             <div class="hero-text">
-                <h3 class="animate" style="font-weight: 300; margin-bottom: 20px; color: white;">Ritmo, Paixão e <span class="text-gradient">Excelência</span></h3>
-                <p class="animate">
-                    Mais de 25 anos criando grooves poderosos e dinâmicos. 
-                    Transformando música em experiência através da bateria.
+                <h3 id="hero-title" class="animate" style="font-weight: 300; margin-bottom: 20px; color: white;"></h3>
+                <p id="hero-subtitle" class="animate">
                 </p>
                 <div class="animate" style="margin-top: 30px;">
                     <a href="#contact" class="btn">
@@ -742,24 +802,45 @@
                     </a>
                 </div>
 
-                <div class="stats-row animate">
-                    <div class="stat-item">
-                        <span class="stat-number">25+</span>
-                        <span class="stat-label">Anos de Estrada</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">15+</span>
-                        <span class="stat-label">Bandas</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">100%</span>
-                        <span class="stat-label">Dedicação</span>
-                    </div>
+                <div class="stats-row animate" id="stats-container">
+                    <!-- Stats will be injected by JS -->
                 </div>
             </div>
             <div class="hero-image">
-                <img src="assets/performance.jpg" alt="Anselmo Cardoso na Bateria">
+                <img src="" alt="Drummer" id="hero-img-el">
             </div>
+        </div>
+    </section>
+
+    <!-- Next Event Section (Agenda) -->
+    <section id="next-event" class="section-padding" style="display: none; background: var(--bg-darker); position: relative; overflow: hidden; padding-bottom: 40px; padding-top: 40px;">
+        <div class="container">
+             <div class="agenda-card animate" style="
+                background: linear-gradient(135deg, rgba(255, 85, 0, 0.05) 0%, rgba(0, 168, 255, 0.05) 100%);
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                padding: 40px;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                max-width: 800px;
+                margin: 0 auto;
+                position: relative;
+             ">
+                <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 5px 20px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(255,85,0,0.4);">
+                    <i class="fas fa-calendar-alt" style="margin-right: 5px;"></i> Próximo Evento
+                </div>
+
+                <h2 id="event-title" style="font-size: 2.5rem; margin-bottom: 10px; margin-top: 10px; color: white; font-family: 'Comfortaa', cursive;"></h2>
+                <div style="width: 50px; height: 3px; background: var(--primary); margin: 20px auto;"></div>
+                <p id="event-subtitle" style="font-size: 1.2rem; color: var(--text-muted); font-weight: 300;"></p>
+                
+                <div style="margin-top: 30px;">
+                     <a href="#contact" class="btn btn-outline" style="font-size: 0.9rem; padding: 10px 25px;">
+                        <i class="fas fa-ticket-alt" style="margin-right: 8px;"></i> Mais Informações
+                     </a>
+                </div>
+             </div>
         </div>
     </section>
 
@@ -769,27 +850,18 @@
             <div class="about-grid">
                 <div class="about-text animate">
                     <div class="section-header">
-                        <span class="section-subtitle">Minha História</span>
-                        <h2 class="section-title">Muito Mais Que <span class="text-gradient">Barulho</span></h2>
-                    </div>
-                    <p>
-                        Comecei minha jornada na bateria aos 9 anos de idade e nunca mais parei. 
-                        Ao longo dos anos, desenvolvi uma identidade sonora única, focada na precisão, 
-                        no groove e na musicalidade.
-                    </p>
-                    <p>
-                        Acredito que a escolha dos pratos e tambores é fundamental para definir a personalidade 
-                        de cada performance. Por isso, trabalho com equipamentos de alta qualidade que oferecem 
-                        timbres ricos e projeção equilibrada.
-                    </p>
-                    <div class="brands">
-                        <span class="brand-badge"><i class="fas fa-drum"></i> Zeus Cymbals</span>
-                        <span class="brand-badge"><i class="fas fa-music"></i> Zildjian</span>
-                        <span class="brand-badge"><i class="fas fa-star"></i> Avatar</span>
-                    </div>
+                    <span class="section-subtitle" id="about-subtitle"></span>
+                    <h2 id="about-title" class="section-title"></h2>
+                </div>
+                <div id="about-text-container">
+                    <!-- Text will be injected by JS -->
+                </div>
+                <div class="brands">
+                    <!-- Brands will be injected by JS -->
+                </div>
                 </div>
                 <div class="about-img animate">
-                    <img src="assets/about-drums.jpg" alt="Setup de Bateria">
+                    <img id="about-img" src="" alt="About Image">
                 </div>
             </div>
         </div>
@@ -803,35 +875,8 @@
                 <h2 class="section-title">Momentos em <span class="text-gradient">Ação</span></h2>
             </div>
             
-            <div class="portfolio-grid">
-                <div class="portfolio-card animate">
-                    <img src="assets/setup-top.jpg" alt="Setup Completo">
-                    <div class="portfolio-info">
-                        <h3>Meu Setup</h3>
-                        <p>Visão geral do kit</p>
-                    </div>
-                </div>
-                <div class="portfolio-card animate">
-                    <img src="assets/camera-view.jpg" alt="Gravação">
-                    <div class="portfolio-info">
-                        <h3>Em Ação</h3>
-                        <p>Perspectiva da câmera</p>
-                    </div>
-                </div>
-                <div class="portfolio-card animate">
-                    <img src="assets/setup-side.jpg" alt="Detalhes">
-                    <div class="portfolio-info">
-                        <h3>Detalhes</h3>
-                        <p>Timbres e texturas</p>
-                    </div>
-                </div>
-                <div class="portfolio-card animate">
-                    <img src="assets/setup-mood.jpg" alt="Atmosfera">
-                    <div class="portfolio-info">
-                        <h3>Atmosfera</h3>
-                        <p>Foco e concentração</p>
-                    </div>
-                </div>
+            <div id="gallery-grid" class="portfolio-grid">
+                <!-- Content will be loaded dynamically -->
             </div>
             
             <div style="text-align: center; margin-top: 50px;">
@@ -878,13 +923,8 @@
                 <h2 class="section-title">Performance em <span class="text-gradient">Vídeo</span></h2>
             </div>
             
-            <div class="video-container animate">
-                <div class="video-wrapper">
-                    <video id="promoVideo" controls preload="metadata">
-                        <source src="assets/video.mp4#t=2" type="video/mp4">
-                        Seu navegador não suporta a reprodução de vídeos.
-                    </video>
-                </div>
+            <div id="video-gallery" class="video-container animate">
+                <!-- Video will be injected by JS -->
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
@@ -906,14 +946,14 @@
                     Entre em contato para conversarmos sobre seu projeto.
                 </p>
                 
-                <a href="https://wa.me/5582996703421?text=Olá!%20Vim%20pelo%20seu%20site%20e%20gostaria%20de%20saber%20mais." class="btn btn-whatsapp" target="_blank">
+                <a id="contact-whatsapp-btn" href="https://wa.me/5582996703421?text=Olá!%20Vim%20pelo%20seu%20site%20e%20gostaria%20de%20saber%20mais." class="btn btn-whatsapp" target="_blank">
                     <i class="fab fa-whatsapp"></i> Falar no WhatsApp
                 </a>
 
                 <div class="social-row">
-                    <a href="https://www.instagram.com/anselmocardoso_/" target="_blank" class="social-btn"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-btn"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="social-btn"><i class="far fa-envelope"></i></a>
+                    <a id="contact-instagram-btn" href="https://www.instagram.com/anselmocardoso_/" target="_blank" class="social-btn"><i class="fab fa-instagram"></i></a>
+                    <a id="contact-youtube-btn" href="#" class="social-btn"><i class="fab fa-youtube"></i></a>
+                    <a id="contact-email-btn" href="#" class="social-btn"><i class="far fa-envelope"></i></a>
                 </div>
             </div>
         </div>
@@ -922,14 +962,347 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <a href="#" class="footer-logo">Anselmo<span class="text-gradient">Cardoso</span></a>
+            <a href="#" class="footer-logo">Ritmo, Paixão e <span class="text-gradient">Excelência</span></a>
             <div class="footer-copy">
-                &copy; 2023 Anselmo Cardoso. Todos os direitos reservados.
+                &copy; 2025 Ritmo, Paixão e Excelência. Todos os direitos reservados.
+                <div id="debug-info" style="font-size: 0.7rem; opacity: 0.5; margin-top: 10px;"></div>
             </div>
         </div>
     </footer>
 
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/saas-engine.js"></script>
+    <script type="module" src="js/loader.js"></script>
     <script>
+        // SaaS Config Loader
+        function hidePreloader() {
+            const preloader = document.getElementById('preloader');
+            if (preloader && preloader.style.opacity !== '0') {
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    document.body.classList.add('loaded');
+                }, 500);
+            }
+        }
+
+        function renderDynamicContent(config) {
+            if (!config) return;
+
+            // Debug Info
+            const debugEl = document.getElementById('debug-info');
+            if(debugEl) {
+                 const ownerType = localStorage.getItem('saas_owner_uid') || 'Default';
+                 const galleryCount = config.gallery ? config.gallery.length : 0;
+                 const validImages = config.gallery ? config.gallery.filter(i => i.image && i.image.length > 20).length : 0;
+                 const authStatus = SaaS.currentUser ? 'Logged In' : 'Guest';
+                 
+                 debugEl.innerHTML = `
+                     <div style="display:flex; flex-direction:column; gap:5px; align-items:center;">
+                         <div>UID: <b style="font-family:monospace">${ownerType.substring(0,8)}...</b> | Galeria: ${validImages}/${galleryCount} imgs | User: ${authStatus}</div>
+                         <div style="display:flex; gap:5px;">
+                             <button onclick="localStorage.clear(); window.location.reload()" style="background:#333; color:white; border:1px solid #555; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.7em;">
+                                 <i class="fas fa-sync"></i> Limpar Cache
+                             </button>
+                             <button onclick="const url = window.location.origin + window.location.pathname + '?uid=' + (localStorage.getItem('saas_owner_uid') || '${ownerType}'); navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no outro navegador.'));" style="background:var(--primary); color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.7em;">
+                                 <i class="fas fa-share-alt"></i> Copiar Link Público
+                             </button>
+                         </div>
+                         <div style="font-size:0.8em; opacity:0.7">v2.4 - Localhost/Public Compatible</div>
+                     </div>
+                 `;
+            }
+
+            // Hero
+            if (config.hero) {
+                // Identity / Logo
+                if (config.logo && config.logo.image) {
+                    const logoEl = document.querySelector('.logo img');
+                    if (logoEl) logoEl.src = config.logo.image;
+                }
+
+                if(document.getElementById('hero-title')) {
+                    // Logic to color text after 17 characters
+                    let titleText = config.hero.title;
+                    if (titleText.length > 16) {
+                        const firstPart = titleText.substring(0, 16);
+                        const secondPart = titleText.substring(16);
+                        document.getElementById('hero-title').innerHTML = `${firstPart}<span style="color: var(--primary);">${secondPart}</span>`;
+                    } else {
+                        document.getElementById('hero-title').innerHTML = titleText;
+                    }
+                }
+                if(document.getElementById('hero-subtitle')) document.getElementById('hero-subtitle').textContent = config.hero.subtitle;
+                // Hero Image - Note: Logic might be needed if it's a background or img tag. 
+                // Current HTML: <div class="hero-image"><img src="assets/performance.jpg"></div>
+                // We need an ID for the image.
+                const heroImg = document.querySelector('.hero-image img');
+                if(heroImg && config.hero.image) heroImg.src = config.hero.image;
+
+                // Next Event / Agenda Section (Powered by Hero Overlay Data)
+                const nextEventSection = document.getElementById('next-event');
+                const eventTitleEl = document.getElementById('event-title');
+                const eventSubtitleEl = document.getElementById('event-subtitle');
+
+                if (nextEventSection && eventTitleEl && eventSubtitleEl) {
+                    const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
+                    const hasSubtitle = config.hero.overlaySubtitle && config.hero.overlaySubtitle.trim() !== "";
+                    
+                    if (hasTitle || hasSubtitle) {
+                        eventTitleEl.textContent = config.hero.overlayTitle || "Evento Especial";
+                        eventSubtitleEl.textContent = config.hero.overlaySubtitle || "Confira em breve mais detalhes.";
+                        nextEventSection.style.display = 'block';
+                    } else {
+                        nextEventSection.style.display = 'none';
+                    }
+                }
+
+                // Legacy Overlay Text (Optional: Keeping it hidden or removing if needed)
+                const overlayTextEl = document.getElementById('hero-overlay-text');
+                if(overlayTextEl) {
+                    const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
+                    const hasSubtitle = config.hero.overlaySubtitle && config.hero.overlaySubtitle.trim() !== "";
+                    
+                    if (hasTitle || hasSubtitle) {
+                        let html = '';
+                        if (hasTitle) html += `<div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 2px;">${config.hero.overlayTitle}</div>`;
+                        if (hasSubtitle) html += `<div style="font-size: 0.9rem; opacity: 0.9;">${config.hero.overlaySubtitle}</div>`;
+                        
+                        overlayTextEl.innerHTML = html;
+                        overlayTextEl.style.display = 'block';
+                    } else {
+                        overlayTextEl.style.display = 'none';
+                    }
+                }
+            }
+
+            // Gallery
+            const galleryContainer = document.getElementById('gallery-grid');
+            if (galleryContainer && config.gallery) {
+                galleryContainer.innerHTML = '';
+                
+                let galleryItems = config.gallery;
+                // Migration support for old format
+                if (!Array.isArray(galleryItems)) {
+                    galleryItems = [
+                        { image: galleryItems.img1, title: "Meu Setup", description: "Visão geral do kit" },
+                        { image: galleryItems.img2, title: "Em Ação", description: "Perspectiva da câmera" },
+                        { image: galleryItems.img3, title: "Detalhes", description: "Timbres e texturas" },
+                        { image: galleryItems.img4, title: "Atmosfera", description: "Foco e concentração" }
+                    ];
+                }
+
+                // Ensure 6 items for display
+                while (galleryItems.length < 6) {
+                    galleryItems.push({ title: "Disponível", description: "Espaço para nova foto", image: "" });
+                }
+                
+                galleryItems.forEach((item, index) => {
+                    // Always render the card, even if image is missing
+                    
+                    const div = document.createElement('div');
+                    // Removed 'animate' class to prevent visibility issues. 
+                    // The observer will add 'active' if needed, but we default to visible for safety.
+                    div.className = 'portfolio-card active'; 
+                    div.style.opacity = '1';
+                    div.style.transform = 'none';
+                    
+                    // Logic for Image or Placeholder
+                    let imageContent = '';
+                    // Check if image exists and is a valid string (basic check)
+                    if (item.image && typeof item.image === 'string' && item.image.trim().length > 20) {
+                        imageContent = `<img id="gallery-img-${index}" src="${item.image}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentNode.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#222;color:#666;\'><i class=\'fas fa-broken-image\' style=\'font-size:3rem;\'></i></div>';">`;
+                    } else {
+                        // Placeholder Icon
+                        imageContent = `
+                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2);">
+                                <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                                <span style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Sem Imagem</span>
+                            </div>
+                        `;
+                    }
+                    
+                    div.innerHTML = `
+                        ${imageContent}
+                        <div class="portfolio-info">
+                            <h3>${item.title || "Sem Título"}</h3>
+                            <p>${item.description || "..."}</p>
+                        </div>
+                    `;
+                    galleryContainer.appendChild(div);
+                });
+                
+                // Re-attach observer (optional now since we force visible)
+                document.querySelectorAll('#gallery-grid .portfolio-card').forEach(el => {
+                     // el.classList.remove('active'); // DON'T hide them anymore
+                     if (typeof observer !== 'undefined') observer.observe(el);
+                });
+            }
+
+            // Stats
+            const statsContainer = document.getElementById('stats-container');
+            if (statsContainer && config.stats) {
+                statsContainer.innerHTML = '';
+                config.stats.forEach(stat => {
+                    const div = document.createElement('div');
+                    div.className = 'stat-item';
+                    div.innerHTML = `
+                        <span class="stat-number">${stat.number}</span>
+                        <span class="stat-label">${stat.label}</span>
+                    `;
+                    statsContainer.appendChild(div);
+                });
+            }
+
+            // About
+            if (config.about) {
+                if(document.getElementById('about-subtitle')) document.getElementById('about-subtitle').textContent = config.about.subtitle || "Minha História";
+                
+                if(document.getElementById('about-title')) {
+                    let aboutTitleText = config.about.title;
+                    if (aboutTitleText.length > 18) {
+                        const firstPart = aboutTitleText.substring(0, 12);
+                        const secondPart = aboutTitleText.substring(12);
+                        document.getElementById('about-title').innerHTML = `${firstPart}<span style="color: var(--primary);">${secondPart}</span>`;
+                    } else {
+                        document.getElementById('about-title').innerHTML = aboutTitleText;
+                    }
+                }
+                
+                if(document.getElementById('about-text-container')) document.getElementById('about-text-container').innerHTML = `<p>${config.about.text.replace(/\n/g, '<br>')}</p>`;
+                const aboutImg = document.getElementById('about-img');
+                if(aboutImg && config.about.image) aboutImg.src = config.about.image;
+
+                // Brands
+                const brandsContainer = document.querySelector('.brands');
+                if (brandsContainer && config.brands) {
+                    brandsContainer.innerHTML = '';
+                    config.brands.forEach(brand => {
+                        const span = document.createElement('span');
+                        span.className = 'brand-badge';
+                        // Check if it has an icon property (font awesome class) or logo (image url)
+                        if (brand.logo) {
+                             span.innerHTML = `<img src="${brand.logo}" alt="${brand.name}" style="height: 20px; width: auto;"> ${brand.name}`;
+                        } else {
+                            // Default fallback or use icon property
+                            const iconClass = brand.icon || 'fas fa-star';
+                            span.innerHTML = `<i class="${iconClass}"></i> ${brand.name}`;
+                        }
+                        brandsContainer.appendChild(span);
+                    });
+                }
+            }
+
+            // Footer Dynamic Update
+            // PRIORITIZE USER DATA (Account Name) over Config Title
+            let footerName = "Ritmo, Paixão e Excelência"; // Fallback requested by user
+            
+            if (typeof globalUserData !== 'undefined' && globalUserData && globalUserData.name) {
+                footerName = globalUserData.name;
+
+                // LOGIN BUTTON -> PROFILE IMAGE
+                const loginNavItem = document.getElementById('login-nav-item');
+                // We check if we haven't already replaced it (to avoid loop/flicker if re-running)
+                const existingImg = loginNavItem ? loginNavItem.querySelector('img') : null;
+
+                if (loginNavItem && globalUserData.photo && !existingImg) {
+                    // Create Profile Link Container
+                    loginNavItem.innerHTML = ''; // Clear existing text "Login"
+                    loginNavItem.style.display = 'flex';
+                    loginNavItem.style.alignItems = 'center';
+
+                    // Divider
+                    const divider = document.createElement('span');
+                    divider.style.color = 'var(--text-muted)';
+                    divider.style.marginRight = '15px';
+                    divider.textContent = '|';
+                    loginNavItem.appendChild(divider);
+
+                    // Profile Link with Image
+                    const profileLink = document.createElement('a');
+                    profileLink.href = 'dashboard/admin.html'; // Go to dashboard
+                    profileLink.className = 'nav-link';
+                    profileLink.style.display = 'flex';
+                    profileLink.style.alignItems = 'center';
+                    profileLink.style.padding = '0';
+                    profileLink.title = 'Ir para o Painel';
+
+                    const img = document.createElement('img');
+                    img.src = globalUserData.photo;
+                    img.alt = globalUserData.name;
+                    img.style.width = '35px';
+                    img.style.height = '35px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    img.style.border = '2px solid var(--primary)';
+                    
+                    profileLink.appendChild(img);
+                    loginNavItem.appendChild(profileLink);
+                }
+
+                // REPLACE FOOTER LOGO WITH PROFILE IMAGE IN FOOTER
+                const footerLogoLink = document.querySelector('.footer-logo');
+                if (footerLogoLink && globalUserData.photo) {
+                    footerLogoLink.innerHTML = '';
+                    
+                    const footerImg = document.createElement('img');
+                    footerImg.src = globalUserData.photo;
+                    footerImg.alt = globalUserData.name;
+                    footerImg.style.height = '50px'; // Match header logo height roughly
+                    footerImg.style.width = '50px';
+                    footerImg.style.borderRadius = '50%';
+                    footerImg.style.objectFit = 'cover';
+                    footerImg.style.border = '2px solid var(--primary)';
+                    footerImg.style.marginRight = '10px';
+                    footerImg.style.verticalAlign = 'middle';
+                    
+                    const nameSpan = document.createElement('span');
+                    // Split name for effect
+                    const parts = footerName.split(' ');
+                    if (parts.length >= 2) {
+                        const last = parts.pop();
+                        const first = parts.join(' ');
+                        nameSpan.innerHTML = `${first}<span class="text-gradient">${last}</span>`;
+                    } else {
+                        nameSpan.innerHTML = `<span class="text-gradient">${footerName}</span>`;
+                    }
+
+                    footerLogoLink.appendChild(footerImg);
+                    footerLogoLink.appendChild(nameSpan);
+                    
+                    // Footer Copy Update
+                    const footerCopyEl = document.querySelector('.footer-copy');
+                    if (footerCopyEl) {
+                        const year = new Date().getFullYear();
+                        footerCopyEl.innerHTML = `&copy; ${year} ${footerName}. Todos os direitos reservados.
+                        <div id="debug-info" style="font-size: 0.7rem; opacity: 0.5; margin-top: 10px;"></div>`;
+                    }
+                }
+
+            } else if (config.hero && config.hero.title) {
+                 // Fallback to title if it looks like a name
+                 const titleText = config.hero.title.replace(/<[^>]*>?/gm, '');
+                 const defaultTitles = ["Ritmo, Paixão e Excelência", "Ritmo, Paixão eExcelência"];
+                 if (!defaultTitles.includes(titleText)) {
+                     footerName = titleText;
+                 }
+            }
+        }
+
+        window.addEventListener('saasConfigUpdated', (e) => {
+            renderDynamicContent(e.detail);
+            hidePreloader();
+        });
+
+        // Initial Check (in case event fired before listener)
+        const cachedConfig = localStorage.getItem('saas_config');
+        if (cachedConfig) {
+            try {
+                renderDynamicContent(JSON.parse(cachedConfig));
+                hidePreloader();
+            } catch(e) { console.error("Error parsing cached config", e); }
+        }
+
         // Header Scroll
         window.addEventListener('scroll', () => {
             const header = document.getElementById('header');
