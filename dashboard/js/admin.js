@@ -1,11 +1,36 @@
 import SaaS from '../../js/saas-engine.js';
 
+// Safety Timeout for Auth Loader
+setTimeout(() => {
+    const authLoader = document.getElementById('auth-loader');
+    if (authLoader && authLoader.style.display !== 'none') {
+        // If still loading after 8 seconds...
+        if (SaaS.currentUser) {
+            // User is technically logged in but UI didn't update. Force update?
+            console.warn("Loader timeout - User exists but UI stalled. Removing loader.");
+            authLoader.style.display = 'none';
+            const mainDashboard = document.getElementById('main-dashboard');
+            if (mainDashboard) mainDashboard.style.display = 'flex';
+        } else {
+            // Not logged in (or auth taking too long), redirect to login
+            console.warn("Loader timeout - No user found. Redirecting.");
+            window.location.href = 'login.html';
+        }
+    }
+}, 8000);
+
 // Admin Dashboard Logic
 
 // 1. Auth & Init (Handled via Event now)
 window.addEventListener('saasUserUpdated', (e) => {
     const user = e.detail;
     
+    // Auth Confirmed: Remove Loader and Show Dashboard
+    const authLoader = document.getElementById('auth-loader');
+    const mainDashboard = document.getElementById('main-dashboard');
+    if (authLoader) authLoader.style.display = 'none';
+    if (mainDashboard) mainDashboard.style.display = 'flex';
+
     // Update Sidebar/Header Info
     document.getElementById('userName').textContent = user.name;
     document.getElementById('userPhoto').src = user.photo || "../assets/logo.png";

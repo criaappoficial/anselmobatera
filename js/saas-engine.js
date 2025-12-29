@@ -97,7 +97,15 @@ const SaaS = {
                 console.log("User Logged In:", user.email);
                 // Save UID as owner for local preview
                 localStorage.setItem('saas_owner_uid', user.uid);
-                this.loadUserData(user.uid);
+                
+                // Ensure User Doc Exists (Safety Check)
+                this.ensureUserDoc(user).then(() => {
+                    this.loadUserData(user.uid);
+                }).catch(err => {
+                    console.error("Init Error:", err);
+                    // Force load even if ensure fails (maybe read-only)
+                    this.loadUserData(user.uid);
+                });
             } else {
                 console.log("User Logged Out");
                 // Check if we are on admin pages
