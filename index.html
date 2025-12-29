@@ -773,6 +773,38 @@
         </div>
     </section>
 
+    <!-- Next Event Section (Agenda) -->
+    <section id="next-event" class="section-padding" style="display: none; background: var(--bg-darker); position: relative; overflow: hidden; padding-bottom: 40px; padding-top: 40px;">
+        <div class="container">
+             <div class="agenda-card animate" style="
+                background: linear-gradient(135deg, rgba(255, 85, 0, 0.05) 0%, rgba(0, 168, 255, 0.05) 100%);
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                padding: 40px;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                max-width: 800px;
+                margin: 0 auto;
+                position: relative;
+             ">
+                <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 5px 20px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(255,85,0,0.4);">
+                    <i class="fas fa-calendar-alt" style="margin-right: 5px;"></i> Próximo Evento
+                </div>
+
+                <h2 id="event-title" style="font-size: 2.5rem; margin-bottom: 10px; margin-top: 10px; color: white; font-family: 'Comfortaa', cursive;"></h2>
+                <div style="width: 50px; height: 3px; background: var(--primary); margin: 20px auto;"></div>
+                <p id="event-subtitle" style="font-size: 1.2rem; color: var(--text-muted); font-weight: 300;"></p>
+                
+                <div style="margin-top: 30px;">
+                     <a href="#contact" class="btn btn-outline" style="font-size: 0.9rem; padding: 10px 25px;">
+                        <i class="fas fa-ticket-alt" style="margin-right: 8px;"></i> Mais Informações
+                     </a>
+                </div>
+             </div>
+        </div>
+    </section>
+
     <!-- About Section -->
     <section id="about" class="section-padding about">
         <div class="container">
@@ -980,7 +1012,25 @@
                 const heroImg = document.querySelector('.hero-image img');
                 if(heroImg && config.hero.image) heroImg.src = config.hero.image;
 
-                // Hero Overlay Text
+                // Next Event / Agenda Section (Powered by Hero Overlay Data)
+                const nextEventSection = document.getElementById('next-event');
+                const eventTitleEl = document.getElementById('event-title');
+                const eventSubtitleEl = document.getElementById('event-subtitle');
+
+                if (nextEventSection && eventTitleEl && eventSubtitleEl) {
+                    const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
+                    const hasSubtitle = config.hero.overlaySubtitle && config.hero.overlaySubtitle.trim() !== "";
+                    
+                    if (hasTitle || hasSubtitle) {
+                        eventTitleEl.textContent = config.hero.overlayTitle || "Evento Especial";
+                        eventSubtitleEl.textContent = config.hero.overlaySubtitle || "Confira em breve mais detalhes.";
+                        nextEventSection.style.display = 'block';
+                    } else {
+                        nextEventSection.style.display = 'none';
+                    }
+                }
+
+                // Legacy Overlay Text (Optional: Keeping it hidden or removing if needed)
                 const overlayTextEl = document.getElementById('hero-overlay-text');
                 if(overlayTextEl) {
                     const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
