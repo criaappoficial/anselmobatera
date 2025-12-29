@@ -1047,20 +1047,38 @@ window.saveVideos = async function() {
         const count = config.videos ? config.videos.length : 0;
         
         for(let i=0; i<count; i++) {
+            const urlVal = document.getElementById(`vid-url-${i}`).value;
+            let type = "youtube"; // Default preference
+            
+            // Simple detection
+            if (urlVal.includes('.mp4') || urlVal.includes('.mov') || urlVal.includes('assets/')) {
+                type = "local";
+            }
+
             newVideos.push({
                 title: document.getElementById(`vid-title-${i}`).value,
-                url: document.getElementById(`vid-url-${i}`).value,
-                id: document.getElementById(`vid-url-${i}`).value,
-                type: "youtube"
+                url: urlVal,
+                id: urlVal,
+                type: type
             });
         }
         
         config.videos = newVideos;
         await SaaS.saveConfig(config);
-        alert('Vídeos salvos com sucesso!');
+        alert('Vídeos salvos! Lembre-se de clicar em "Publicar Alterações no Site" para garantir que todos vejam.');
     } catch (err) {
-        console.error(err);
-        alert('Erro ao salvar vídeos.');
+        console.error("Save Error Details:", err);
+        if (err.code === 'permission-denied') {
+             alert(`Erro de Permissão (Firestore Rules):
+             
+1. Verifique se você está logado com a conta correta.
+2. Seu usuário é: ${SaaS.currentUser ? SaaS.currentUser.email : 'Deslogado'}
+3. UID: ${SaaS.currentUser ? SaaS.currentUser.uid : 'N/A'}
+
+Tente fazer logout e login novamente.`);
+        } else {
+             alert('Erro ao salvar vídeos: ' + (err.message || err));
+        }
     } finally {
         hideLoader();
     }
@@ -1130,14 +1148,38 @@ window.savePricing = async function() {
         
         config.pricing = newPricing;
         await SaaS.saveConfig(config);
-        alert('Preços salvos com sucesso!');
+        alert('Serviços salvos com sucesso!');
     } catch (err) {
         console.error(err);
-        alert('Erro ao salvar preços.');
+        alert('Erro ao salvar serviços.');
     } finally {
         hideLoader();
     }
 };
+
+// Sidebar Toggle Logic for Mobile
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('open');
+            }
+        });
+        
+        // Close sidebar when clicking a nav item on mobile
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const sidebar = document.querySelector('.sidebar');
+                if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        });
+    }
+});
 
 window.removePrice = async function(index) {
      if(!confirm('Tem certeza que deseja remover este serviço?')) return;

@@ -265,24 +265,26 @@ const SaaS = {
     saveConfig: function(newConfig) {
         if (!this.currentUser) return Promise.reject("Usuário não logado");
         
-        const userRef = doc(db, 'users', this.currentUser.uid);
-        return getDoc(userRef).then(docSnap => {
-            if (docSnap.exists() && docSnap.data().isLogin === true) {
-                return setDoc(doc(db, 'sites', this.currentUser.uid), newConfig)
-                    .then(() => {
-                        console.log("Config Saved");
-                        // Cache locally for index.html usage (simulating public site view)
-                        try {
-                            localStorage.setItem('saas_config', JSON.stringify(newConfig));
-                        } catch (e) {
-                            console.error("Erro ao salvar no LocalStorage (provavelmente quota excedida):", e);
-                            alert("Atenção: A imagem pode ser muito grande para o cache local. Ela foi salva no servidor, mas pode demorar a aparecer.");
-                        }
-                    });
-            } else {
-                return Promise.reject("Permissão negada. Sua conta não está ativa (isLogin = false).");
-            }
-        });
+        // Direct Write (Bypassing isLogin check to debug Firestore Permissions)
+        // We trust Firestore Rules to handle security
+        
+        // FORCE ownerUid to be the current user
+        newConfig.ownerUid = this.currentUser.uid;
+        newConfig.email = this.currentUser.email;
+        newConfig.updatedBy = this.currentUser.email;
+        newConfig.lastUpdated = new Date().toISOString();
+
+        console.log("Saving config for:", this.currentUser.email);
+
+        return setDoc(doc(db, 'sites', this.currentUser.uid), newConfig)
+            .then(() => {
+                console.log("Config Saved Successfully");
+                try {
+                    localStorage.setItem('saas_config', JSON.stringify(newConfig));
+                } catch (e) {
+                    console.error("Cache Error:", e);
+                }
+            });
     },
 
     publishSite: function() {

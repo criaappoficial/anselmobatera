@@ -82,8 +82,20 @@ function applyConfig(config) {
             if (video.type === 'youtube' || video.url.includes('youtube') || video.url.includes('youtu.be')) {
                 // Extract ID if full URL
                 let videoId = video.url;
-                if (video.url.includes('v=')) videoId = video.url.split('v=')[1].split('&')[0];
-                if (video.url.includes('youtu.be/')) videoId = video.url.split('youtu.be/')[1];
+                try {
+                    if (video.url.includes('v=')) {
+                        videoId = video.url.split('v=')[1].split('&')[0];
+                    } else if (video.url.includes('youtu.be/')) {
+                        videoId = video.url.split('youtu.be/')[1].split('?')[0];
+                    } else if (video.url.includes('embed/')) {
+                        videoId = video.url.split('embed/')[1].split('?')[0];
+                    } else if (video.url.includes('shorts/')) {
+                         videoId = video.url.split('shorts/')[1].split('?')[0];
+                    }
+                } catch(e) { console.error("Error parsing video ID", e); }
+
+                // Clean ID
+                if(videoId) videoId = videoId.trim();
                 
                 wrapper.innerHTML = `
                     <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}" title="${video.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
