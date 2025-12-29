@@ -95,6 +95,8 @@ const SaaS = {
             this.currentUser = user;
             if (user) {
                 console.log("User Logged In:", user.email);
+                // Save UID as owner for local preview
+                localStorage.setItem('saas_owner_uid', user.uid);
                 this.loadUserData(user.uid);
             } else {
                 console.log("User Logged Out");
@@ -198,23 +200,61 @@ const SaaS = {
         }
 
         // 2. Fetch Live from Firestore (Owner's Config)
-        // Hardcoded UID for this single-tenant instance
-        const OWNER_UID = '2IlpHLltgjWUOBpPTXePBVmVPgK2'; 
+        // Check for public pointer first (Try 'sites/public_info' first as it is more likely to be readable)
         
-        getDoc(doc(db, 'sites', OWNER_UID)).then(docSnap => {
-            if (docSnap.exists()) {
-                const liveConfig = docSnap.data();
-                this.currentConfig = liveConfig;
-                
-                // Update LocalStorage to keep it fresh
-                localStorage.setItem('saas_config', JSON.stringify(liveConfig));
-                
-                // Dispatch update
-                window.dispatchEvent(new CustomEvent('saasConfigUpdated', { detail: liveConfig }));
-            }
-        }).catch(err => {
-            console.error("Error fetching live config:", err);
-        });
+        // Helper to get config from a UID
+        const loadFromUid = (uid) => {
+             console.log("Attempting to load config for UID:", uid);
+             return getDoc(doc(db, 'sites', uid)).then(docSnap => {
+                if (docSnap && docSnap.exists()) {
+                    const liveConfig = docSnap.data();
+                    this.currentConfig = liveConfig;
+                    if(uid !== '2IlpHLltgjWUOBpPTXePBVmVPgK2') {
+                        localStorage.setItem('saas_owner_uid', uid);
+                    }
+                    localStorage.setItem('saas_config', JSON.stringify(liveConfig));
+                    window.dispatchEvent(new CustomEvent('saasConfigUpdated', { detail: liveConfig }));
+                    return true;
+                }
+                return false;
+             }).catch(err => {
+                 console.warn("Permission Denied for UID:", uid, "- Loading Defaults/Cache if available.");
+                 // Fallback to cache if permission denied (likely public view restriction)
+                 const cached = localStorage.getItem('saas_config');
+                 if(cached) {
+                     this.currentConfig = JSON.parse(cached);
+                     window.dispatchEvent(new CustomEvent('saasConfigUpdated', { detail: this.currentConfig }));
+                 }
+                 return false; 
+             });
+        };
+
+        // 0. Check URL Parameters for explicit UID override
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUid = urlParams.get('uid');
+        if (urlUid) {
+            console.log("Loading from URL UID:", urlUid);
+            loadFromUid(urlUid);
+            return;
+        }
+
+        // Try getting the public owner UID
+        getDoc(doc(db, 'sites', 'public_info'))
+            .then(snap => {
+                if(snap.exists()) return snap.data().ownerUid;
+                // Fallback to system collection
+                return getDoc(doc(db, 'system', 'public_site_settings')).then(s => s.exists() ? s.data().ownerUid : null);
+            })
+            .then(publicUid => {
+                // Priority: Local Dev Override > Public Cloud Setting > Hardcoded Default
+                const targetUid = localStorage.getItem('saas_owner_uid') || publicUid || '2IlpHLltgjWUOBpPTXePBVmVPgK2';
+                return loadFromUid(targetUid);
+            })
+            .catch(err => {
+                console.error("Error in config loading chain:", err);
+                // Last resort fallback
+                loadFromUid('2IlpHLltgjWUOBpPTXePBVmVPgK2');
+            });
     },
 
     // Content Management Methods
@@ -243,6 +283,24 @@ const SaaS = {
                 return Promise.reject("Permissão negada. Sua conta não está ativa (isLogin = false).");
             }
         });
+    },
+
+    publishSite: function() {
+        if (!this.currentUser) return Promise.reject("Usuário não logado");
+        
+        // Write to system/public_site_settings AND sites/public_info (redundancy)
+        const p1 = setDoc(doc(db, 'system', 'public_site_settings'), {
+            ownerUid: this.currentUser.uid,
+            updatedAt: new Date().toISOString(),
+            updatedBy: this.currentUser.email
+        }).catch(e => console.warn("System collection write failed (expected if rules restrictive):", e));
+
+        const p2 = setDoc(doc(db, 'sites', 'public_info'), {
+            ownerUid: this.currentUser.uid,
+            updatedAt: new Date().toISOString()
+        });
+
+        return Promise.all([p1, p2]);
     },
 
     updateSection: function(section, data) {

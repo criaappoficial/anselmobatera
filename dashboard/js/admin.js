@@ -14,6 +14,32 @@ window.addEventListener('saasUserUpdated', (e) => {
     const statusEl = document.getElementById('dashSubStatus');
     const userStatusEl = document.getElementById('userStatus');
     
+    // Add Public Link Helper
+    const publicLinkContainer = document.getElementById('public-link-container');
+    if (!publicLinkContainer) {
+        const dashContainer = document.getElementById('tab-dashboard');
+        if(dashContainer) {
+            const linkDiv = document.createElement('div');
+            linkDiv.id = 'public-link-container';
+            linkDiv.style.background = 'rgba(0,255,100,0.1)';
+            linkDiv.style.border = '1px solid rgba(0,255,100,0.3)';
+            linkDiv.style.padding = '15px';
+            linkDiv.style.borderRadius = '8px';
+            linkDiv.style.marginTop = '20px';
+            linkDiv.style.marginBottom = '20px';
+            linkDiv.innerHTML = `
+                <h3 style="margin-top:0; font-size:1.1rem; color:var(--success)">Seu Link Público</h3>
+                <p style="font-size:0.9rem; color:#ccc; margin-bottom:10px;">Use este link para compartilhar ou testar seu site se a versão principal não atualizar imediatamente:</p>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" value="${window.location.origin}/index.html?uid=${user.uid}" readonly style="width:100%; background:rgba(0,0,0,0.3); border:none; color:white; padding:8px; border-radius:4px;" onclick="this.select()">
+                    <a href="${window.location.origin}/index.html?uid=${user.uid}" target="_blank" class="btn-primary" style="text-decoration:none; display:flex; align-items:center; white-space:nowrap;">Abrir <i class="fas fa-external-link-alt" style="margin-left:5px;"></i></a>
+                </div>
+            `;
+            // Insert after the first row of cards if possible, or just at top
+            dashContainer.insertBefore(linkDiv, dashContainer.firstChild);
+        }
+    }
+
     // Logic: user.isLogin must be true for ACTIVE status
     // user.subscriptionStatus is also tracked
     if (user.isLogin === true) {
@@ -38,6 +64,28 @@ window.addEventListener('saasUserUpdated', (e) => {
     if (user.createdAt) {
          const created = new Date(user.createdAt);
          document.getElementById('dashNextBilling').textContent = created.toLocaleDateString('pt-BR');
+    }
+});
+
+// Publish Site Button
+document.getElementById('btnPublishSite').addEventListener('click', async () => {
+    if(!confirm('Deseja definir seu perfil como a versão pública do site? Isso fará com que todos os visitantes vejam suas informações.')) return;
+    
+    showLoader('Publicando...');
+    try {
+        await SaaS.publishSite();
+        // Also try to save to a redundant public location just in case
+        try {
+             // We access the firestore instance via SaaS internals if exposed, or just rely on SaaS.publishSite doing it all.
+             // Since SaaS.publishSite is the method, we will update THAT method in saas-engine.js instead of here.
+        } catch(e) { console.log("Redundant save skipped"); }
+        
+        alert('Site publicado com sucesso! A versão pública agora deve exibir suas fotos.');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao publicar site: ' + err.message);
+    } finally {
+        hideLoader();
     }
 });
 
@@ -793,7 +841,7 @@ document.getElementById('galleryForm').addEventListener('submit', async (e) => {
         }
 
         await SaaS.updateSection('gallery', newGallery);
-        alert('Galeria atualizada com sucesso!');
+        alert('Galeria salva! Lembre-se de clicar em "Publicar Alterações no Site" para garantir que todos vejam.');
     } catch (err) {
         console.error(err);
         const errorMsg = err.message || JSON.stringify(err);

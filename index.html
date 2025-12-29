@@ -909,6 +909,7 @@
             <a href="#" class="footer-logo">Anselmo<span class="text-gradient">Cardoso</span></a>
             <div class="footer-copy">
                 &copy; 2023 Anselmo Cardoso. Todos os direitos reservados.
+                <div id="debug-info" style="font-size: 0.7rem; opacity: 0.5; margin-top: 10px;"></div>
             </div>
         </div>
     </footer>
@@ -920,6 +921,30 @@
         // SaaS Config Loader
         function renderDynamicContent(config) {
             if (!config) return;
+
+            // Debug Info
+            const debugEl = document.getElementById('debug-info');
+            if(debugEl) {
+                 const ownerType = localStorage.getItem('saas_owner_uid') || 'Default';
+                 const galleryCount = config.gallery ? config.gallery.length : 0;
+                 const validImages = config.gallery ? config.gallery.filter(i => i.image && i.image.length > 20).length : 0;
+                 const authStatus = SaaS.currentUser ? 'Logged In' : 'Guest';
+                 
+                 debugEl.innerHTML = `
+                     <div style="display:flex; flex-direction:column; gap:5px; align-items:center;">
+                         <div>UID: <b style="font-family:monospace">${ownerType.substring(0,8)}...</b> | Galeria: ${validImages}/${galleryCount} imgs | User: ${authStatus}</div>
+                         <div style="display:flex; gap:5px;">
+                             <button onclick="localStorage.clear(); window.location.reload()" style="background:#333; color:white; border:1px solid #555; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.7em;">
+                                 <i class="fas fa-sync"></i> Limpar Cache
+                             </button>
+                             <button onclick="const url = window.location.origin + window.location.pathname + '?uid=' + (localStorage.getItem('saas_owner_uid') || '${ownerType}'); navigator.clipboard.writeText(url).then(() => alert('Link copiado! Cole no outro navegador.'));" style="background:var(--primary); color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.7em;">
+                                 <i class="fas fa-share-alt"></i> Copiar Link Público
+                             </button>
+                         </div>
+                         <div style="font-size:0.8em; opacity:0.7">v2.4 - Localhost/Public Compatible</div>
+                     </div>
+                 `;
+            }
 
             // Hero
             if (config.hero) {
@@ -985,7 +1010,11 @@
                     // Always render the card, even if image is missing
                     
                     const div = document.createElement('div');
-                    div.className = 'portfolio-card animate';
+                    // Removed 'animate' class to prevent visibility issues. 
+                    // The observer will add 'active' if needed, but we default to visible for safety.
+                    div.className = 'portfolio-card active'; 
+                    div.style.opacity = '1';
+                    div.style.transform = 'none';
                     
                     // Logic for Image or Placeholder
                     let imageContent = '';
@@ -1012,17 +1041,11 @@
                     galleryContainer.appendChild(div);
                 });
                 
-                // Re-attach observer to new elements
-                if (typeof observer !== 'undefined') {
-                    document.querySelectorAll('#gallery-grid .animate').forEach(el => observer.observe(el));
-                } else {
-                    // Fallback if observer is not ready yet
-                    setTimeout(() => {
-                         document.querySelectorAll('#gallery-grid .animate').forEach(el => {
-                             el.classList.add('active'); // Force visible just in case
-                         });
-                    }, 500);
-                }
+                // Re-attach observer (optional now since we force visible)
+                document.querySelectorAll('#gallery-grid .portfolio-card').forEach(el => {
+                     // el.classList.remove('active'); // DON'T hide them anymore
+                     if (typeof observer !== 'undefined') observer.observe(el);
+                });
             }
 
             // Stats
