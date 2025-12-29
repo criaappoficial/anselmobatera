@@ -10,6 +10,9 @@ const SaaS = {
     // Default Data Configuration
     defaults: {
         config: {
+            logo: {
+                image: "assets/logo.png"
+            },
             hero: {
                 title: "Ritmo, Paixão e Excelência",
                 subtitle: "Mais de 25 anos criando grooves poderosos e dinâmicos. Transformando música em experiência através da bateria.",
@@ -319,7 +322,7 @@ const SaaS = {
         if (Array.isArray(data)) {
             config[section] = data;
         } else {
-            config[section] = { ...config[section], ...data };
+            config[section] = { ...(config[section] || {}), ...data };
         }
         return this.saveConfig(config);
     },

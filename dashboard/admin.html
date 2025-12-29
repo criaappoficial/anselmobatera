@@ -134,6 +134,21 @@
                 <div id="tab-content" class="tab-content" style="display: none;">
                     <div class="card">
                         <div class="card-header">
+                            <h4>Identidade Visual</h4>
+                        </div>
+                        <form id="identityForm">
+                            <div class="form-group">
+                                <label class="form-label">Logo do Site</label>
+                                <input type="file" class="form-control" id="logoImageFile" accept="image/*" data-target="logoImage" data-preview="logoImagePreview">
+                                <input type="hidden" id="logoImage">
+                                <img id="logoImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 5px; display: none;">
+                            </div>
+                            <button type="submit" class="btn-primary">Salvar Identidade</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
                             <h4>Seção Hero (Topo)</h4>
                         </div>
                         <form id="heroForm">
@@ -307,6 +322,9 @@
                             
                             <div id="paymentArea" style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px solid var(--border);">
                                 <h4 style="color: var(--text-main); margin-bottom: 15px;">Chave Pix para Pagamento</h4>
+                                
+                                <div id="pix-qrcode" style="display: flex; justify-content: center; margin-bottom: 20px; background: white; padding: 15px; width: fit-content; margin-left: auto; margin-right: auto; border-radius: 8px;"></div>
+
                                 <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 5px; margin-bottom: 15px; word-break: break-all; font-family: monospace; color: var(--primary); font-size: 1.1rem; border: 1px dashed var(--primary);">
                                     3bb0e547-a5ec-45a2-a6a0-336a470b4fb2
                                 </div>
@@ -327,6 +345,7 @@
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script type="module" src="../js/firebase-config.js"></script>
     <script type="module" src="../js/saas-engine.js"></script>
     <script type="module" src="js/admin.js"></script>

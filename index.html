@@ -956,6 +956,12 @@
 
             // Hero
             if (config.hero) {
+                // Identity / Logo
+                if (config.logo && config.logo.image) {
+                    const logoEl = document.querySelector('.logo img');
+                    if (logoEl) logoEl.src = config.logo.image;
+                }
+
                 if(document.getElementById('hero-title')) {
                     // Logic to color text after 17 characters
                     let titleText = config.hero.title;

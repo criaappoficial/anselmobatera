@@ -1,18 +1,17 @@
 import SaaS from '../../js/saas-engine.js';
 
+let globalUser = null; // Store user for global access (e.g. switchTab)
+
 // Safety Timeout for Auth Loader
 setTimeout(() => {
     const authLoader = document.getElementById('auth-loader');
     if (authLoader && authLoader.style.display !== 'none') {
-        // If still loading after 8 seconds...
         if (SaaS.currentUser) {
-            // User is technically logged in but UI didn't update. Force update?
             console.warn("Loader timeout - User exists but UI stalled. Removing loader.");
             authLoader.style.display = 'none';
             const mainDashboard = document.getElementById('main-dashboard');
             if (mainDashboard) mainDashboard.style.display = 'flex';
         } else {
-            // Not logged in (or auth taking too long), redirect to login
             console.warn("Loader timeout - No user found. Redirecting.");
             window.location.href = 'login.html';
         }
@@ -24,6 +23,7 @@ setTimeout(() => {
 // 1. Auth & Init (Handled via Event now)
 window.addEventListener('saasUserUpdated', (e) => {
     const user = e.detail;
+    globalUser = user;
     
     // Auth Confirmed: Remove Loader and Show Dashboard
     const authLoader = document.getElementById('auth-loader');
@@ -103,12 +103,6 @@ document.getElementById('btnPublishSite').addEventListener('click', async () => 
     showLoader('Publicando...');
     try {
         await SaaS.publishSite();
-        // Also try to save to a redundant public location just in case
-        try {
-             // We access the firestore instance via SaaS internals if exposed, or just rely on SaaS.publishSite doing it all.
-             // Since SaaS.publishSite is the method, we will update THAT method in saas-engine.js instead of here.
-        } catch(e) { console.log("Redundant save skipped"); }
-        
         alert('Site publicado com sucesso! A versão pública agora deve exibir suas fotos.');
     } catch (err) {
         console.error(err);
@@ -120,8 +114,6 @@ document.getElementById('btnPublishSite').addEventListener('click', async () => 
 
 // Disable/Enable Editing
 function enableEditing(enabled) {
-    // Select all inputs, textareas, and buttons (except those in the subscription tab if we want to allow copying, but generally disabling save buttons is key)
-    // We want to disable form submissions and edits.
     const inputs = document.querySelectorAll('input, textarea, select');
     const buttons = document.querySelectorAll('button.btn-primary');
     
@@ -130,8 +122,6 @@ function enableEditing(enabled) {
     });
 
     buttons.forEach(btn => {
-        // Don't disable buttons in the payment area if we had any (we removed the simulation button)
-        // We mainly want to disable "Save" buttons.
         btn.disabled = !enabled;
         if (!enabled) {
             btn.style.opacity = '0.5';
@@ -149,6 +139,10 @@ function enableEditing(enabled) {
 window.addEventListener('saasConfigUpdated', (e) => {
     const config = e.detail;
     if(!config) return;
+
+    // Identity (Logo)
+    if(document.getElementById('logoImage')) document.getElementById('logoImage').value = config.logo?.image || "";
+    updateImagePreview('logoImagePreview', config.logo?.image);
 
     // Hero
     if(document.getElementById('heroTitle')) document.getElementById('heroTitle').value = config.hero?.title || "";
@@ -180,7 +174,6 @@ window.addEventListener('saasConfigUpdated', (e) => {
         updateImagePreview('videoBgPreview', config.style.videoBg);
     }
 
-
     // Contact
     if(document.getElementById('contactWhatsapp')) document.getElementById('contactWhatsapp').value = config.contact?.whatsapp || "";
     if(document.getElementById('contactEmail')) document.getElementById('contactEmail').value = config.contact?.email || "";
@@ -197,52 +190,15 @@ function updateImagePreview(previewId, imageSrc) {
     if (!previewEl) return;
 
     let displaySrc = imageSrc;
-    // Fix relative paths for Admin Dashboard (assets/ -> ../assets/)
-    if (displaySrc && typeof displaySrc === 'string' && displaySrc.startsWith('assets/')) {
-        displaySrc = '../' + displaySrc;
-    }
-
-    // Check if imageSrc is valid (not empty, not null)
-    if (displaySrc && displaySrc.length > 0) {
+    if (displaySrc) {
         previewEl.src = displaySrc;
         previewEl.style.display = 'block';
-        // Remove emoji placeholder if it was added via JS (simplest is just to show image)
     } else {
-        // Show placeholder or hide
-        // User requested emoji if no image
-        // However, the IMG tag cannot simply render text.
-        // We'll set src to a placeholder image or hide it.
-        // Let's hide it to avoid broken image icon, and maybe show a span next to it?
-        // Or simpler: set src to empty and hide.
         previewEl.style.display = 'none';
-        
-        // Let's create a placeholder span if not exists
-        let placeholder = document.getElementById(previewId + '-placeholder');
-        if (!placeholder) {
-            placeholder = document.createElement('div');
-            placeholder.id = previewId + '-placeholder';
-            placeholder.style.fontSize = '2rem';
-            placeholder.style.marginTop = '10px';
-            placeholder.textContent = '📷 Sem imagem selecionada';
-            previewEl.parentNode.appendChild(placeholder);
-        }
-        placeholder.style.display = 'block';
-        
-        // If we have an image, we should hide the placeholder
-        if (imageSrc && imageSrc.length > 0) {
-             placeholder.style.display = 'none';
-        }
-    }
-    
-    // Logic fix: if imageSrc is valid, hide placeholder
-    if (imageSrc && imageSrc.length > 0) {
-        const placeholder = document.getElementById(previewId + '-placeholder');
-        if (placeholder) placeholder.style.display = 'none';
     }
 }
 
-// Helper: Compress Image and Convert to Base64
-function compressImage(file, maxWidth = 1024, quality = 0.7) {
+function compressImage(file, maxWidth, quality) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -294,16 +250,6 @@ function compressImage(file, maxWidth = 1024, quality = 0.7) {
     });
 }
 
-// Convert Image to Base64 (String) - Deprecated in favor of compressImage but kept for fallback
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-
 // Loader Helpers
 function showLoader(text = 'Carregando...') {
     let loader = document.getElementById('admin-loader');
@@ -328,6 +274,12 @@ function showLoader(text = 'Carregando...') {
 
 // 2. Tab Switching
 function switchTab(tabId) {
+    // LOCKING LOGIC: If user is pending, restrict access to non-subscription tabs
+    if (globalUser && !globalUser.isLogin && tabId !== 'subscription') {
+        alert("Conta pendente de verificação. Por favor, regularize sua assinatura.");
+        return;
+    }
+
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     // Show selected
@@ -336,6 +288,12 @@ function switchTab(tabId) {
     // Update sidebar active state
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.querySelector(`.nav-item[data-tab="${tabId}"]`)?.classList.add('active');
+
+    // Close sidebar on mobile
+    const sidebar = document.querySelector('.sidebar');
+    if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+    }
     
     // Update Page Title
     const titles = {
@@ -349,31 +307,15 @@ function switchTab(tabId) {
     document.getElementById('page-title').textContent = titles[tabId];
 }
 
-// Add event listeners to sidebar
-document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
-    item.addEventListener('click', () => {
-        switchTab(item.getAttribute('data-tab'));
-    });
-});
-
-// Helper: Handle File Inputs
-const fileInputs = ['heroImage', 'aboutImage']; 
-
-// Custom Modal Implementation
-window.showCustomModal = function(title, message) {
-    // Remove existing if any
-    const existing = document.getElementById('custom-modal-overlay');
-    if (existing) existing.remove();
-
+function showCustomModal(title, message) {
     const overlay = document.createElement('div');
-    overlay.id = 'custom-modal-overlay';
     overlay.style.position = 'fixed';
     overlay.style.top = '0';
     overlay.style.left = '0';
     overlay.style.width = '100%';
     overlay.style.height = '100%';
-    overlay.style.background = 'rgba(0,0,0,0.85)';
     overlay.style.zIndex = '100000';
+    overlay.style.background = 'rgba(0,0,0,0.6)';
     overlay.style.display = 'flex';
     overlay.style.justifyContent = 'center';
     overlay.style.alignItems = 'center';
@@ -477,31 +419,20 @@ document.body.addEventListener('change', async (e) => {
                 }
                 
                 sizeDisplay.style.color = 'var(--success, #2ecc71)';
-                sizeDisplay.innerHTML += ' <i class="fas fa-check-circle"></i> (OK)';
-
-                const targetId = e.target.getAttribute('data-target'); 
-                if (targetId) {
-                    const targetInput = document.getElementById(targetId);
-                    if (targetInput) {
-                        targetInput.value = base64String;
-                        
-                        // Update status text if it exists (for gallery)
-                        if (targetId.startsWith('gallery-img-')) {
-                            const idNum = targetId.split('-')[2];
-                            const statusEl = document.getElementById(`gallery-status-${idNum}`);
-                            if (statusEl) {
-                                statusEl.innerHTML = `<span style="color: var(--success);"><i class="fas fa-check"></i> Pronta para Salvar (${finalSizeKB}KB)</span>`;
-                            }
-                        }
-
-                        // Preview
-                        const previewId = e.target.getAttribute('data-preview');
-                        const previewEl = document.getElementById(previewId);
-                        if (previewId && previewEl) {
-                            previewEl.src = base64String;
-                            previewEl.style.display = 'block';
-                        }
-                    }
+                
+                // Update preview if exists
+                const previewId = e.target.getAttribute('data-preview');
+                const previewEl = document.getElementById(previewId);
+                if (previewId && previewEl) {
+                    previewEl.src = base64String;
+                    previewEl.style.display = 'block';
+                }
+                
+                // Update hidden input
+                const targetId = e.target.getAttribute('data-target');
+                const targetInput = document.getElementById(targetId);
+                if (targetInput) {
+                    targetInput.value = base64String;
                 }
             } catch (err) {
                 console.error("Error converting file:", err);
@@ -519,6 +450,22 @@ function hideLoader() {
 }
 
 // 4. Form Handlers
+document.getElementById('identityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoader();
+    try {
+        await SaaS.updateSection('logo', {
+            image: document.getElementById('logoImage').value
+        });
+        alert('Identidade Visual atualizada com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar Identidade Visual.');
+    } finally {
+        hideLoader();
+    }
+});
+
 document.getElementById('heroForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     showLoader();
@@ -567,7 +514,7 @@ window.removeBrand = async function(index) {
         const brands = SaaS.getConfig().brands || [];
         brands.splice(index, 1);
         await SaaS.updateSection('brands', brands);
-        renderBrands(); // Re-render triggers from config update, but we call it just in case or wait for event
+        renderBrands(); 
     } catch (err) {
         console.error(err);
         alert('Erro ao remover marca.');
@@ -582,137 +529,29 @@ window.saveBrand = async function(index) {
         const brands = SaaS.getConfig().brands || [];
         if (brands[index]) {
             brands[index].name = document.getElementById(`brand-name-${index}`).value;
-            // Handle image from file input if present, or hidden input
-            // The render loop below sets up inputs.
-            // Let's assume we read from the inputs rendered.
-            // Note: If user changed image, it should be in the hidden input if we use the file handler logic.
-            // But let's verify how renderBrands sets up inputs.
-            // It seems we rely on "Salvar Marcas" (saveBrands) for bulk update usually?
-            // The user wants "Botão para cada elemento". So individual save.
-            
-            // We need to grab the potentially updated image value.
-            // The renderBrands below (in old code) created inputs with IDs.
-            
-            // Wait, we need to handle the image update correctly.
-            // The file handler updates the target input.
-            // Let's ensure the input IDs are consistent.
-            const logoInput = document.getElementById(`brand-logo-${index}`);
-            if (logoInput) brands[index].logo = logoInput.value;
-            
-            await SaaS.updateSection('brands', brands);
-            alert('Marca salva com sucesso!');
+             const logoInput = document.getElementById(`brand-logo-${index}`);
+             if (logoInput && logoInput.value) {
+                 brands[index].logo = logoInput.value;
+             }
+             await SaaS.updateSection('brands', brands);
+             alert('Marca salva com sucesso!');
+             renderBrands();
         }
     } catch (err) {
-        console.error(err);
-        alert('Erro ao salvar marca.');
+         console.error(err);
+         alert('Erro ao salvar marca.');
     } finally {
-        hideLoader();
+         hideLoader();
     }
 };
 
-window.editBrand = function(index) {
-    // Switch to edit mode for this item
-    renderBrands(index); // Re-render with this index in edit mode
-};
-
-// We need a state to track which item is being edited if we want to toggle UI.
-// Or we can just render all as View and toggle one.
-let editingBrandIndex = -1;
-
-window.updateBrandPreview = function(index) {
-    const url = document.getElementById(`brand-logo-${index}`).value;
-    const preview = document.getElementById(`brand-preview-${index}`);
-    if (preview) {
-        if (url && url.length > 5) {
-            preview.src = url;
-            preview.style.display = 'block';
-        } else {
-            preview.style.display = 'none';
-        }
-    }
-};
-
-window.renderBrands = function(editIndex = -1) {
-    const list = document.getElementById('brandList');
-    if (!list) return;
-    
-    list.innerHTML = '';
-    const brands = SaaS.getConfig().brands || [];
-    
-    if (brands.length === 0) {
-        list.innerHTML = '<p class="text-muted" style="text-align:center; padding: 20px;">Nenhuma marca cadastrada.</p>';
-        return;
-    }
-    
-    brands.forEach((brand, index) => {
-        let logoSrc = brand.logo;
-        if (logoSrc && typeof logoSrc === 'string' && logoSrc.startsWith('assets/')) {
-            logoSrc = '../' + logoSrc;
-        }
-
-        const div = document.createElement('div');
-        div.className = 'form-group card';
-        div.style.padding = '15px';
-        div.style.background = 'var(--bg-darker)';
-        div.style.marginBottom = '15px';
-        
-        const isEditing = (index === editIndex);
-        
-        if (isEditing) {
-            // Edit Mode
-            div.innerHTML = `
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; justify-content: space-between;">
-                    <strong>Editando Marca ${index + 1}</strong>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                    <div>
-                        <label class="form-label">Nome</label>
-                        <input type="text" class="form-control" value="${brand.name || ''}" id="brand-name-${index}">
-                    </div>
-                    <div>
-                        <label class="form-label">Logo (URL ou Upload)</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" class="form-control" value="${brand.logo || ''}" id="brand-logo-${index}" placeholder="https://..." onchange="updateBrandPreview(${index})">
-                            <label class="btn-primary" style="cursor: pointer; margin: 0; white-space: nowrap;">
-                                <i class="fas fa-upload"></i> Upload
-                                <input type="file" style="display: none;" data-target="brand-logo-${index}" data-preview="brand-preview-${index}">
-                            </label>
-                        </div>
-                        <img id="brand-preview-${index}" src="${logoSrc || ''}" style="max-height: 50px; margin-top: 10px; display: ${logoSrc ? 'block' : 'none'}; border-radius: 4px;">
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button type="button" class="btn-primary" onclick="saveBrand(${index})">Salvar</button>
-                        <button type="button" class="btn-outline" onclick="renderBrands(-1)">Cancelar</button>
-                    </div>
-                </div>
-            `;
-        } else {
-            // View Mode
-            div.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <img src="${logoSrc || ''}" style="width: 40px; height: 40px; object-fit: contain; background: white; border-radius: 4px; padding: 2px; display: ${logoSrc ? 'block' : 'none'};">
-                        <div>
-                            <div style="font-weight: bold; font-size: 1.1rem;">${brand.name || 'Sem Nome'}</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn-outline" style="padding: 5px 10px;" onclick="renderBrands(${index})"><i class="fas fa-edit"></i> Editar</button>
-                        <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px;" onclick="removeBrand(${index})"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `;
-        }
-        list.appendChild(div);
-    });
-}
-window.addBrandField = async function() {
+window.addBrand = async function() {
     showLoader();
     try {
         const brands = SaaS.getConfig().brands || [];
-        brands.push({ name: "", logo: "" });
+        brands.push({ name: "Nova Marca", logo: "" });
         await SaaS.updateSection('brands', brands);
-        renderBrands(brands.length - 1);
+        renderBrands();
     } catch (err) {
         console.error(err);
         alert('Erro ao adicionar marca.');
@@ -721,32 +560,53 @@ window.addBrandField = async function() {
     }
 };
 
-// Stats Logic
-window.renderStats = function(editIndex = -1) {
+function renderBrands() {
+    const list = document.getElementById('brandsList');
+    if (!list) return;
+    list.innerHTML = '';
+    const brands = SaaS.getConfig().brands || [];
+    
+    brands.forEach((brand, index) => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.marginBottom = '15px';
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <strong>Marca ${index + 1}</strong>
+                <div>
+                    <button type="button" class="btn-primary" onclick="saveBrand(${index})" style="margin-right: 5px;">Salvar</button>
+                    <button type="button" class="btn-primary" style="background: var(--danger);" onclick="removeBrand(${index})">Remover</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nome da Marca</label>
+                <input type="text" class="form-control" value="${brand.name}" id="brand-name-${index}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Logo (Upload)</label>
+                <input type="file" class="form-control" accept="image/*" data-target="brand-logo-${index}" data-preview="brand-logo-preview-${index}">
+                <input type="hidden" id="brand-logo-${index}" value="${brand.logo || ''}">
+                <img id="brand-logo-preview-${index}" src="${brand.logo || ''}" style="max-width: 100px; margin-top: 10px; display: ${brand.logo ? 'block' : 'none'};">
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function renderStats(editIndex = -1) {
     const list = document.getElementById('statsList');
     if (!list) return;
-    
     list.innerHTML = '';
     const stats = SaaS.getConfig().stats || [];
     
-    if (stats.length === 0) {
-        list.innerHTML = '<p class="text-muted" style="text-align:center; padding: 20px;">Nenhuma estatística cadastrada.</p>';
-        return;
-    }
-    
     stats.forEach((stat, index) => {
         const div = document.createElement('div');
-        div.className = 'form-group card';
-        div.style.padding = '15px';
-        div.style.background = 'var(--bg-darker)';
-        div.style.marginBottom = '15px';
+        div.className = 'card';
+        div.style.marginBottom = '10px';
         
-        const isEditing = (index === editIndex);
-        
-        if (isEditing) {
-            // Edit Mode
+        if (index === editIndex) {
             div.innerHTML = `
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <strong>Editando Estatística ${index + 1}</strong>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -850,35 +710,20 @@ document.getElementById('galleryForm').addEventListener('submit', async (e) => {
             const titleInput = document.getElementById(`gallery-title-${i}`);
             const descInput = document.getElementById(`gallery-desc-${i}`);
             
-            if (imgInput && titleInput && descInput) {
-                const imgVal = imgInput.value;
-                totalSize += imgVal.length;
-                
+            if (imgInput && titleInput) {
                 newGallery.push({
-                    image: imgVal,
+                    image: imgInput.value,
                     title: titleInput.value,
-                    description: descInput.value
+                    description: descInput ? descInput.value : ""
                 });
             }
         }
         
-        // Validation: Firestore 1MB limit (approx 1,048,576 bytes)
-        // Base64 chars are 1 byte each in UTF-8 usually, but safe limit is 1M chars.
-        // We set a safe margin (950KB)
-        if (totalSize > 950000) {
-             throw new Error("Total gallery size exceeds limit");
-        }
-
         await SaaS.updateSection('gallery', newGallery);
-        alert('Galeria salva! Lembre-se de clicar em "Publicar Alterações no Site" para garantir que todos vejam.');
+        alert('Galeria salva com sucesso!');
     } catch (err) {
         console.error(err);
-        const errorMsg = err.message || JSON.stringify(err);
-        if (errorMsg.includes("Total gallery size exceeds limit") || errorMsg.includes("exceeds the maximum allowed size")) {
-            showCustomModal("Galeria Muito Pesada", "O tamanho total das imagens excede o limite do banco de dados (1MB).<br><br>Isso acontece quando muitas imagens de alta qualidade são enviadas.<br>Tente substituir algumas imagens por versões menores.");
-        } else {
-            alert('Erro ao atualizar galeria: ' + errorMsg);
-        }
+        alert('Erro ao salvar galeria.');
     } finally {
         hideLoader();
     }
@@ -977,59 +822,31 @@ document.getElementById('styleForm').addEventListener('submit', async (e) => {
         alert('Estilo atualizado!');
     } catch (err) {
         console.error(err);
-        alert('Erro ao atualizar estilo.');
+        alert('Erro ao atualizar estilo: ' + err.message);
     } finally {
         hideLoader();
     }
 });
 
-document.getElementById('contactForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    showLoader();
-    try {
-        await SaaS.updateSection('contact', {
-            whatsapp: document.getElementById('contactWhatsapp').value,
-            email: document.getElementById('contactEmail').value,
-            instagram: document.getElementById('contactInstagram').value
-        });
-        alert('Contatos atualizados com sucesso!');
-    } catch (err) {
-        console.error(err);
-        alert('Erro ao atualizar contatos.');
-    } finally {
-        hideLoader();
-    }
-});
-
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    SaaS.logout();
-});
-
-// Initial Tab
-switchTab('dashboard');
-
-// --- Media & Pricing Logic ---
-
-// Videos
 function renderVideos() {
-    const list = document.getElementById('videoList');
+    const list = document.getElementById('videosList');
+    if (!list) return;
     list.innerHTML = '';
     const videos = SaaS.getConfig().videos || [];
     
     videos.forEach((video, index) => {
         const div = document.createElement('div');
-        div.className = 'form-group card';
-        div.style.padding = '15px';
+        div.className = 'card';
+        div.style.marginBottom = '10px';
         div.innerHTML = `
-            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                 <strong>Vídeo ${index + 1}</strong>
                 <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px; font-size: 0.8rem;" onclick="removeVideo(${index})">Remover</button>
             </div>
-            <label class="form-label">Título</label>
-            <input type="text" class="form-control mb-2" value="${video.title}" id="vid-title-${index}">
-            <label class="form-label" style="margin-top: 10px;">URL / ID (YouTube ou Local)</label>
-            <input type="text" class="form-control" value="${video.url || video.id}" id="vid-url-${index}">
+            <div class="form-group">
+                <label class="form-label">URL do YouTube</label>
+                <input type="text" class="form-control" value="${video.url}" id="video-url-${index}">
+            </div>
         `;
         list.appendChild(div);
     });
@@ -1040,7 +857,7 @@ window.addVideoField = async function() {
     try {
         const config = SaaS.getConfig();
         config.videos = config.videos || [];
-        config.videos.push({ title: "Novo Vídeo", url: "", type: "youtube" });
+        config.videos.push({ url: "" });
         await SaaS.saveConfig(config);
         renderVideos();
     } catch (err) {
@@ -1051,11 +868,34 @@ window.addVideoField = async function() {
     }
 };
 
-window.removeVideo = async function(index) {
-    if(!confirm('Tem certeza que deseja remover este vídeo?')) return;
-    
+window.saveVideos = async function() {
     showLoader();
     try {
+        const config = SaaS.getConfig();
+        const count = config.videos ? config.videos.length : 0;
+        const newVideos = [];
+        
+        for(let i=0; i<count; i++) {
+            newVideos.push({
+                url: document.getElementById(`video-url-${i}`).value
+            });
+        }
+        
+        config.videos = newVideos;
+        await SaaS.saveConfig(config);
+        alert('Vídeos salvos com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar vídeos.');
+    } finally {
+        hideLoader();
+    }
+};
+
+window.removeVideo = async function(index) {
+     if(!confirm('Tem certeza que deseja remover este vídeo?')) return;
+     showLoader();
+     try {
         const config = SaaS.getConfig();
         config.videos.splice(index, 1);
         await SaaS.saveConfig(config);
@@ -1068,54 +908,9 @@ window.removeVideo = async function(index) {
     }
 };
 
-window.saveVideos = async function() {
-    showLoader();
-    try {
-        const config = SaaS.getConfig();
-        const newVideos = [];
-        const count = config.videos ? config.videos.length : 0;
-        
-        for(let i=0; i<count; i++) {
-            const urlVal = document.getElementById(`vid-url-${i}`).value;
-            let type = "youtube"; // Default preference
-            
-            // Simple detection
-            if (urlVal.includes('.mp4') || urlVal.includes('.mov') || urlVal.includes('assets/')) {
-                type = "local";
-            }
-
-            newVideos.push({
-                title: document.getElementById(`vid-title-${i}`).value,
-                url: urlVal,
-                id: urlVal,
-                type: type
-            });
-        }
-        
-        config.videos = newVideos;
-        await SaaS.saveConfig(config);
-        alert('Vídeos salvos! Lembre-se de clicar em "Publicar Alterações no Site" para garantir que todos vejam.');
-    } catch (err) {
-        console.error("Save Error Details:", err);
-        if (err.code === 'permission-denied') {
-             alert(`Erro de Permissão (Firestore Rules):
-             
-1. Verifique se você está logado com a conta correta.
-2. Seu usuário é: ${SaaS.currentUser ? SaaS.currentUser.email : 'Deslogado'}
-3. UID: ${SaaS.currentUser ? SaaS.currentUser.uid : 'N/A'}
-
-Tente fazer logout e login novamente.`);
-        } else {
-             alert('Erro ao salvar vídeos: ' + (err.message || err));
-        }
-    } finally {
-        hideLoader();
-    }
-};
-
-// Pricing
 function renderPricing() {
     const list = document.getElementById('pricingList');
+    if (!list) return;
     list.innerHTML = '';
     const pricing = SaaS.getConfig().pricing || [];
     
@@ -1165,7 +960,7 @@ window.savePricing = async function() {
         const config = SaaS.getConfig();
         const count = config.pricing ? config.pricing.length : 0;
         const newPricing = [];
-        
+
         for(let i=0; i<count; i++) {
             newPricing.push({
                 id: i,
@@ -1174,7 +969,7 @@ window.savePricing = async function() {
                 features: config.pricing[i].features || []
             });
         }
-        
+
         config.pricing = newPricing;
         await SaaS.saveConfig(config);
         alert('Serviços salvos com sucesso!');
@@ -1196,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sidebar.classList.toggle('open');
             }
         });
-        
+
         // Close sidebar when clicking a nav item on mobile
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
@@ -1212,7 +1007,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.removePrice = async function(index) {
      if(!confirm('Tem certeza que deseja remover este serviço?')) return;
-     
+
      showLoader();
      try {
         const config = SaaS.getConfig();
@@ -1230,6 +1025,15 @@ window.removePrice = async function(index) {
 // Initial Renders
 renderVideos();
 renderPricing();
+
+// Ensure navigation works
+document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tab = item.getAttribute('data-tab');
+        if(tab) switchTab(tab);
+    });
+});
 
 // Expose functions to global scope for HTML onclick attributes
 window.switchTab = switchTab;
@@ -1269,3 +1073,33 @@ if (headerLogoutBtn) {
     });
 }
 
+// Render Pix QR Code
+function renderPixQRCode() {
+    const qrContainer = document.getElementById('pix-qrcode');
+    // Ensure container exists and is empty
+    if (qrContainer && qrContainer.innerHTML === '') {
+        const pixKey = "3bb0e547-a5ec-45a2-a6a0-336a470b4fb2"; 
+        try {
+            // Check if QRCode is defined
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(qrContainer, {
+                    text: pixKey,
+                    width: 150,
+                    height: 150,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.L
+                });
+            } else {
+                console.warn("QRCode library not loaded yet.");
+                // Retry once after a second if not loaded
+                setTimeout(renderPixQRCode, 1000);
+            }
+        } catch (e) {
+            console.error("QR Code Error:", e);
+        }
+    }
+}
+
+// Initial Call
+renderPixQRCode();
