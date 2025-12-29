@@ -211,8 +211,9 @@
 
         /* Hero */
         .hero {
-            height: 100vh;
+            height: 100vh; /* Mantém a altura total da viewport */
             min-height: 700px;
+            padding-top: 100px; /* Adiciona espaço para a navbar fixa */
             position: relative;
             display: flex;
             align-items: center;
@@ -249,6 +250,7 @@
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
+            height: 100%; /* Ocupa a altura disponível */
         }
 
         .hero-text {
@@ -262,15 +264,19 @@
             flex: 1;
             display: flex;
             justify-content: center;
+            align-items: center; /* Centraliza verticalmente */
             z-index: 1;
             animation: fadeIn Up 1s ease-out 0.3s;
+            height: 100%; /* Garante altura para alinhamento */
         }
 
         .hero-image img {
             border-radius: 20px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             max-width: 100%;
-            height: auto;
+            max-height: 80vh; /* Limita a altura para não estourar a tela */
+            width: auto; /* Mantém proporção */
+            object-fit: contain; /* Ajusta dentro do espaço */
             border: 1px solid var(--border);
             transform: rotate(3deg);
             transition: var(--transition);
