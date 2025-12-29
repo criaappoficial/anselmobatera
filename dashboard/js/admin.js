@@ -35,6 +35,12 @@ window.addEventListener('saasUserUpdated', (e) => {
     document.getElementById('userName').textContent = user.name;
     document.getElementById('userPhoto').src = user.photo || "../assets/logo.png";
     
+    // Update "Ver Site" Link in Sidebar
+    const viewSiteLink = document.querySelector('a[href="../index.html"]');
+    if(viewSiteLink) {
+        viewSiteLink.href = `../index.html?uid=${user.uid}`;
+    }
+    
     // Update Dropdown Info
     if(document.getElementById('dropdownName')) document.getElementById('dropdownName').textContent = user.name;
     if(document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = user.email;
@@ -60,8 +66,9 @@ window.addEventListener('saasUserUpdated', (e) => {
                 <h3 style="margin-top:0; font-size:1.1rem; color:var(--success)">Seu Link Público</h3>
                 <p style="font-size:0.9rem; color:#ccc; margin-bottom:10px;">Use este link para compartilhar ou testar seu site se a versão principal não atualizar imediatamente:</p>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" value="${window.location.origin}/index.html?uid=${user.uid}" readonly style="width:100%; background:rgba(0,0,0,0.3); border:none; color:white; padding:8px; border-radius:4px;" onclick="this.select()">
-                    <a href="${window.location.origin}/index.html?uid=${user.uid}" target="_blank" class="btn-primary" style="text-decoration:none; display:flex; align-items:center; white-space:nowrap;">Abrir <i class="fas fa-external-link-alt" style="margin-left:5px;"></i></a>
+                    <input type="text" id="publicLinkInput" value="${window.location.origin}/index.html?uid=${user.uid}" readonly style="width:100%; background:rgba(0,0,0,0.3); border:none; color:white; padding:8px; border-radius:4px;" onclick="this.select()">
+                    <button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('publicLinkInput').value).then(() => alert('Link copiado!'))" style="white-space:nowrap;"><i class="fas fa-copy"></i> Copiar</button>
+                    <a href="${window.location.origin}/index.html?uid=${user.uid}" target="_blank" class="btn-primary" style="text-decoration:none; display:flex; align-items:center; white-space:nowrap; background: var(--secondary);">Abrir <i class="fas fa-external-link-alt" style="margin-left:5px;"></i></a>
                 </div>
             `;
             // Insert after the first row of cards if possible, or just at top
