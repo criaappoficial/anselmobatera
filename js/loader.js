@@ -123,6 +123,7 @@ function applyConfig(config) {
         });
     }
 
+    
     // 5. Pricing (Inject into Styles Grid or New Section?)
     // The user requested a Pricing Table. The current site doesn't have one.
     // We should inject it before Contact if it exists.

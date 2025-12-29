@@ -187,6 +187,9 @@ const SaaS = {
         onSnapshot(doc(db, 'users', uid), (docSnap) => {
             if (docSnap.exists()) {
                 const userData = docSnap.data();
+                // Firestore data doesn't include the ID automatically, so we add it manually
+                userData.uid = uid; 
+                
                 // Dispatch event for Admin Dashboard to update UI
                 window.dispatchEvent(new CustomEvent('saasUserUpdated', { detail: userData }));
             }
