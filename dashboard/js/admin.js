@@ -10,6 +10,10 @@ window.addEventListener('saasUserUpdated', (e) => {
     document.getElementById('userName').textContent = user.name;
     document.getElementById('userPhoto').src = user.photo || "../assets/logo.png";
     
+    // Update Dropdown Info
+    if(document.getElementById('dropdownName')) document.getElementById('dropdownName').textContent = user.name;
+    if(document.getElementById('dropdownEmail')) document.getElementById('dropdownEmail').textContent = user.email;
+    
     // Check Status (isLogin / isPaid)
     const statusEl = document.getElementById('dashSubStatus');
     const userStatusEl = document.getElementById('userStatus');
@@ -1204,4 +1208,39 @@ renderPricing();
 
 // Expose functions to global scope for HTML onclick attributes
 window.switchTab = switchTab;
+
+// Profile Dropdown Logic
+const userProfileDropdown = document.getElementById('userProfileDropdown');
+const profileDropdownContent = document.getElementById('profileDropdownContent');
+const switchAccountBtn = document.getElementById('switchAccountBtn');
+const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+
+if (userProfileDropdown && profileDropdownContent) {
+    userProfileDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+        profileDropdownContent.classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!userProfileDropdown.contains(e.target)) {
+            profileDropdownContent.classList.remove('show');
+        }
+    });
+}
+
+if (switchAccountBtn) {
+    switchAccountBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if(confirm('Deseja realmente trocar de conta?')) {
+            SaaS.logout();
+        }
+    });
+}
+
+if (headerLogoutBtn) {
+    headerLogoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        SaaS.logout();
+    });
+}
 

@@ -259,7 +259,81 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     box-shadow: 0 0 0 2px rgba(255, 85, 0, 0.2);
 }
 
-/* Elegant File Input */
+/* Profile Dropdown */
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 250px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    margin-top: 10px;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.profile-dropdown.show {
+    display: block;
+}
+
+.dropdown-header {
+    padding: 15px;
+    background: var(--bg-darker);
+    border-bottom: 1px solid var(--border);
+}
+
+.dropdown-header strong {
+    display: block;
+    color: white;
+    font-size: 0.95rem;
+    margin-bottom: 3px;
+}
+
+.dropdown-header span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: var(--text);
+    text-decoration: none;
+    transition: background 0.2s;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.dropdown-item i {
+    width: 20px;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.dropdown-item:hover {
+    background: var(--surface-hover);
+    color: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 input[type="file"].form-control {
     padding: 10px;
     background: var(--surface-hover);
