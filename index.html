@@ -729,6 +729,12 @@
 
         /* Responsive */
         @media (max-width: 992px) {
+            .hero {
+                height: auto;
+                min-height: 100vh;
+                padding-bottom: 60px;
+                overflow: visible;
+            }
             .hero h1 { font-size: 3.5rem; }
             .about-grid { grid-template-columns: 1fr; }
             .hero-container {
@@ -749,7 +755,11 @@
             .stats-row {
                 justify-content: center;
                 flex-wrap: wrap;
-                gap: 30px;
+                gap: 20px;
+                margin-top: 30px;
+            }
+            .stat-number {
+                font-size: 2rem;
             }
             .hero-image {
                 margin-bottom: 20px;
