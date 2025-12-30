@@ -36,9 +36,14 @@ window.addEventListener('saasUserUpdated', (e) => {
     document.getElementById('userPhoto').src = user.photo || "../assets/logo.png";
     
     // Update "Ver Site" Link in Sidebar
-    const viewSiteLink = document.querySelector('a[href="../index.html"]');
+    const viewSiteLink = document.getElementById('viewSiteLink');
     if(viewSiteLink) {
-        viewSiteLink.href = `../index.html?uid=${user.uid}`;
+        // Use full path to avoid relative path issues and match "Public Link" format logic if needed
+        // But keeping relative is fine for navigation. 
+        // Let's use the same logic as the public link to be 100% sure it points to the same place.
+        // window.location.origin gives the domain (e.g. localhost:3000)
+        // We want to go to root/index.html
+        viewSiteLink.href = `${window.location.origin}/index.html?uid=${user.uid}`;
     }
     
     // Update Dropdown Info
