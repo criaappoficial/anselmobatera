@@ -49,7 +49,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
 .auth-card {
     background: var(--surface);
     padding: 40px;
-    border-radius: 20px;
+    border-radius: 0; /* Square */
     width: 100%;
     max-width: 400px;
     text-align: center;
@@ -75,7 +75,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     background: white;
     color: #333;
     border: none;
-    border-radius: 50px;
+    border-radius: 0; /* Square */
     font-weight: 600;
     font-family: 'Comfortaa', cursive;
     cursor: pointer;
@@ -136,7 +136,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     padding: 12px 15px;
     color: var(--text-muted);
     text-decoration: none;
-    border-radius: 10px;
+    border-radius: 0; /* Square */
     margin-bottom: 5px;
     transition: var(--transition);
     font-weight: 600;
@@ -217,7 +217,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
 .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 15px;
+    border-radius: 0; /* Square */
     padding: 25px;
     margin-bottom: 25px;
 }
@@ -248,7 +248,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     border: 1px solid var(--border);
     color: white;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 0; /* Square */
     font-family: inherit;
     transition: var(--transition);
 }
@@ -268,7 +268,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     width: 250px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 0; /* Square */
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     z-index: 1000;
     margin-top: 10px;
@@ -312,7 +312,7 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     display: flex;
     align-items: center;
     padding: 12px 15px;
-    color: var(--text);
+    color: var(--text-main);
     text-decoration: none;
     transition: background 0.2s;
     font-size: 0.9rem;
@@ -334,29 +334,29 @@ h1, h2, h3, h4, h5, h6, .logo-text, .nav-item {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-input[type="file"].form-control {
-    padding: 10px;
+
+/* Custom Upload Button - Square & Distinct */
+.btn-upload {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 15px;
     background: var(--surface-hover);
+    color: var(--text-muted);
+    border: 2px dashed var(--border);
+    border-radius: 0; /* Square */
     cursor: pointer;
-    position: relative;
-}
-
-input[type="file"]::file-selector-button {
-    margin-right: 15px;
-    border: none;
-    background: var(--primary);
-    padding: 8px 15px;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
-    font-family: 'Comfortaa', cursive;
-    font-size: 0.85rem;
     transition: var(--transition);
+    font-family: 'Comfortaa', cursive;
+    font-weight: 600;
 }
 
-input[type="file"]::file-selector-button:hover {
-    background: #e64a00;
-    transform: translateY(-1px);
+.btn-upload:hover {
+    background: rgba(255, 85, 0, 0.05);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .btn-primary {
@@ -364,7 +364,7 @@ input[type="file"]::file-selector-button:hover {
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: 0; /* Square */
     cursor: pointer;
     font-weight: 600;
     transition: var(--transition);
@@ -378,7 +378,7 @@ input[type="file"]::file-selector-button:hover {
 /* Subscription Status */
 .status-badge {
     padding: 5px 12px;
-    border-radius: 20px;
+    border-radius: 0; /* Square */
     font-size: 0.8rem;
     font-weight: 600;
 }
@@ -410,5 +410,13 @@ input[type="file"]::file-selector-button:hover {
 
     #sidebarToggle {
         display: block !important;
+    }
+    
+    .content-area {
+        padding: 20px;
+    }
+    
+    .card {
+        padding: 15px;
     }
 }

@@ -562,6 +562,68 @@
             margin-bottom: 15px;
         }
 
+        /* Pricing/Services */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .pricing-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 40px 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: var(--transition);
+            backdrop-filter: var(--glass);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-10px);
+            background: var(--surface-hover);
+        }
+
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .pricing-price {
+            font-size: 1.8rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 30px;
+            text-align: left;
+            flex-grow: 1;
+        }
+
+        .pricing-features li {
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .pricing-features li i {
+            color: var(--primary);
+            margin-right: 10px;
+            margin-top: 5px;
+            font-size: 0.8rem;
+        }
+
         /* Video */
         .video-section {
             background: linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9)), url('assets/performance.jpg') fixed center/cover;
@@ -836,7 +898,7 @@
                 <p id="event-subtitle" style="font-size: 1.2rem; color: var(--text-muted); font-weight: 300;"></p>
                 
                 <div style="margin-top: 30px;">
-                     <a href="#contact" class="btn btn-outline" style="font-size: 0.9rem; padding: 10px 25px;">
+                     <a id="event-link" href="#contact" class="btn btn-outline" style="font-size: 0.9rem; padding: 10px 25px;" target="_blank">
                         <i class="fas fa-ticket-alt" style="margin-right: 8px;"></i> Mais Informações
                      </a>
                 </div>
@@ -911,6 +973,20 @@
                     <h3>Pop & Rock</h3>
                     <p>Batidas sólidas e precisas para conduzir a música com energia e consistência.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services / Pricing Section -->
+    <section id="services" class="section-padding">
+        <div class="container">
+            <div class="section-header" style="text-align: center;">
+                <span class="section-subtitle">Contratação</span>
+                <h2 class="section-title">Serviços <span class="text-gradient">Exclusivos</span></h2>
+            </div>
+
+            <div id="pricing-grid" class="pricing-grid">
+                <!-- Content injected by JS -->
             </div>
         </div>
     </section>
@@ -1039,18 +1115,48 @@
                 const heroImg = document.querySelector('.hero-image img');
                 if(heroImg && config.hero.image) heroImg.src = config.hero.image;
 
-                // Next Event / Agenda Section (Powered by Hero Overlay Data)
+                // Next Event / Agenda Section
                 const nextEventSection = document.getElementById('next-event');
                 const eventTitleEl = document.getElementById('event-title');
                 const eventSubtitleEl = document.getElementById('event-subtitle');
+                const eventLinkEl = document.getElementById('event-link');
 
                 if (nextEventSection && eventTitleEl && eventSubtitleEl) {
-                    const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
-                    const hasSubtitle = config.hero.overlaySubtitle && config.hero.overlaySubtitle.trim() !== "";
-                    
-                    if (hasTitle || hasSubtitle) {
-                        eventTitleEl.textContent = config.hero.overlayTitle || "Evento Especial";
-                        eventSubtitleEl.textContent = config.hero.overlaySubtitle || "Confira em breve mais detalhes.";
+                    let showEvent = false;
+                    let title = "";
+                    let subtitle = "";
+                    let link = "#contact";
+
+                    // New Config Logic
+                    if (config.nextEvent && config.nextEvent.active) {
+                        showEvent = true;
+                        title = config.nextEvent.title || "Evento Especial";
+                        subtitle = config.nextEvent.date || "Confira em breve mais detalhes.";
+                        link = config.nextEvent.link || "#contact";
+                    } 
+                    // Legacy Fallback (Hero Overlay)
+                    else if (!config.nextEvent && (config.hero.overlayTitle || config.hero.overlaySubtitle)) {
+                        const hasTitle = config.hero.overlayTitle && config.hero.overlayTitle.trim() !== "";
+                        const hasSubtitle = config.hero.overlaySubtitle && config.hero.overlaySubtitle.trim() !== "";
+                        if (hasTitle || hasSubtitle) {
+                            showEvent = true;
+                            title = config.hero.overlayTitle || "Evento Especial";
+                            subtitle = config.hero.overlaySubtitle || "Confira em breve mais detalhes.";
+                        }
+                    }
+
+                    if (showEvent) {
+                        eventTitleEl.textContent = title;
+                        eventSubtitleEl.textContent = subtitle;
+                        if(eventLinkEl) {
+                            eventLinkEl.href = link;
+                            // If link is internal anchor (starts with #), remove target=_blank
+                            if(link.startsWith('#')) {
+                                eventLinkEl.removeAttribute('target');
+                            } else {
+                                eventLinkEl.setAttribute('target', '_blank');
+                            }
+                        }
                         nextEventSection.style.display = 'block';
                     } else {
                         nextEventSection.style.display = 'none';
@@ -1191,6 +1297,33 @@
                         brandsContainer.appendChild(span);
                     });
                 }
+            }
+
+            // Pricing / Services
+            const pricingContainer = document.getElementById('pricing-grid');
+            if (pricingContainer && config.pricing) {
+                pricingContainer.innerHTML = '';
+                config.pricing.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'pricing-card animate';
+                    
+                    let featuresHtml = '';
+                    if (item.features && Array.isArray(item.features)) {
+                        featuresHtml = '<ul class="pricing-features">';
+                        item.features.forEach(feat => {
+                            featuresHtml += `<li><i class="fas fa-check"></i> ${feat}</li>`;
+                        });
+                        featuresHtml += '</ul>';
+                    }
+
+                    div.innerHTML = `
+                        <h3>${item.title}</h3>
+                        <div class="pricing-price">${item.price}</div>
+                        ${featuresHtml}
+                        <a href="#contact" class="btn btn-outline" style="width:100%; justify-content:center;">Contratar</a>
+                    `;
+                    pricingContainer.appendChild(div);
+                });
             }
 
             // Footer Dynamic Update

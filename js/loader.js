@@ -100,26 +100,19 @@ function applyConfig(config) {
                 wrapper.innerHTML = `
                     <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}" title="${video.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 `;
-            } else {
-                // Local fallback
-                wrapper.innerHTML = `
-                    <video controls preload="metadata" style="width: 100%; border-radius: 10px;">
-                        <source src="${video.url}" type="video/mp4">
-                    </video>
-                `;
+
+                const title = document.createElement('h4');
+                title.innerText = video.title;
+                title.style.color = 'white';
+                title.style.marginTop = '10px';
+                title.style.textAlign = 'center';
+                
+                const container = document.createElement('div');
+                container.appendChild(wrapper);
+                container.appendChild(title);
+                
+                videoGallery.appendChild(container);
             }
-            
-            const title = document.createElement('h4');
-            title.innerText = video.title;
-            title.style.color = 'white';
-            title.style.marginTop = '10px';
-            title.style.textAlign = 'center';
-            
-            const container = document.createElement('div');
-            container.appendChild(wrapper);
-            container.appendChild(title);
-            
-            videoGallery.appendChild(container);
         });
     }
 
@@ -156,7 +149,7 @@ function applyConfig(config) {
                     <h3 style="font-size: 1.5rem; margin-bottom: 15px;">${item.title}</h3>
                     <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">${item.price}</div>
                     <ul style="text-align: left; margin-bottom: 30px; color: var(--text-muted);">
-                        ${item.features ? item.features.map(f => `<li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--success); margin-right: 10px;"></i>${f}</li>`).join('') : ''}
+                        ${item.features ? item.features.map(f => `<li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--primary); margin-right: 10px;"></i>${f}</li>`).join('') : ''}
                     </ul>
                     <a href="https://wa.me/${config.contact.whatsapp}?text=Olá, tenho interesse no plano ${item.title}" class="btn btn-outline" style="width: 100%; justify-content: center;">Contratar</a>
                 </div>

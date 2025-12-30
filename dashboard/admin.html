@@ -117,17 +117,6 @@
                              <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; text-align: center;">Clique aqui para garantir que todos vejam sua versão atualizada.</p>
                         </div>
                     </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Ações Rápidas</h4>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                            <button class="btn-primary" onclick="switchTab('content')">Editar Textos</button>
-                            <button class="btn-primary" onclick="switchTab('media')">Adicionar Vídeo</button>
-                            <button class="btn-primary" onclick="switchTab('services')">Atualizar Preços</button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Tab: Content -->
@@ -139,9 +128,12 @@
                         <form id="identityForm">
                             <div class="form-group">
                                 <label class="form-label">Logo do Site</label>
-                                <input type="file" class="form-control" id="logoImageFile" accept="image/*" data-target="logoImage" data-preview="logoImagePreview">
+                                <label class="btn-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i> Escolher Logo
+                                    <input type="file" id="logoImageFile" accept="image/*" data-target="logoImage" data-preview="logoImagePreview" style="display: none;">
+                                </label>
                                 <input type="hidden" id="logoImage">
-                                <img id="logoImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 5px; display: none;">
+                                <img id="logoImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 0; display: none;">
                             </div>
                             <button type="submit" class="btn-primary">Salvar Identidade</button>
                         </form>
@@ -163,19 +155,40 @@
                             <!-- Image Upload for Hero -->
                             <div class="form-group">
                                 <label class="form-label">Imagem Principal (Hero)</label>
-                                <input type="file" class="form-control" id="heroImageFile" accept="image/*" data-target="heroImage" data-preview="heroImagePreview">
+                                <label class="btn-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i> Escolher Imagem Hero
+                                    <input type="file" id="heroImageFile" accept="image/*" data-target="heroImage" data-preview="heroImagePreview" style="display: none;">
+                                </label>
                                 <input type="hidden" id="heroImage">
-                                <img id="heroImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 5px; display: none;">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Título do Overlay (Sobre a Imagem)</label>
-                                <input type="text" class="form-control" id="heroOverlayTitle" placeholder="Ex: Próximo Show">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Subtítulo do Overlay</label>
-                                <input type="text" class="form-control" id="heroOverlaySubtitle" placeholder="Ex: 15/10 - Blue Note SP">
+                                <img id="heroImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 0; display: none;">
                             </div>
                             <button type="submit" class="btn-primary">Salvar Alterações</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Agenda / Próximo Show</h4>
+                        </div>
+                        <form id="eventForm">
+                             <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                                <input type="checkbox" id="eventActive" style="width: auto;">
+                                <label for="eventActive" style="margin: 0; cursor: pointer;">Exibir Seção de Agenda no Site</label>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nome do Evento</label>
+                                <input type="text" class="form-control" id="eventTitle" placeholder="Ex: Show de Lançamento">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data e Local</label>
+                                <input type="text" class="form-control" id="eventDate" placeholder="Ex: 15/10/2024 - Blue Note SP">
+                            </div>
+                             <div class="form-group">
+                                <label class="form-label">Link para Mais Informações</label>
+                                <input type="text" class="form-control" id="eventLink" placeholder="Ex: https://ticket360.com.br/evento... ou #contact">
+                                <small style="color: var(--text-muted);">Use #contact para levar ao formulário de contato do site.</small>
+                            </div>
+                            <button type="submit" class="btn-primary">Salvar Agenda</button>
                         </form>
                     </div>
 
@@ -208,9 +221,12 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Imagem (Sobre Mim)</label>
-                                <input type="file" class="form-control" id="aboutImageFile" accept="image/*" data-target="aboutImage" data-preview="aboutImagePreview">
+                                <label class="btn-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i> Escolher Foto Pessoal
+                                    <input type="file" id="aboutImageFile" accept="image/*" data-target="aboutImage" data-preview="aboutImagePreview" style="display: none;">
+                                </label>
                                 <input type="hidden" id="aboutImage">
-                                <img id="aboutImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 5px; display: none;">
+                                <img id="aboutImagePreview" src="" alt="Preview" style="max-width: 200px; margin-top: 10px; border-radius: 0; display: none;">
                             </div>
                             <button type="submit" class="btn-primary">Salvar Alterações</button>
                         </form>
@@ -232,8 +248,7 @@
                 <div id="tab-media" class="tab-content" style="display: none;">
                     <div class="card">
                         <div class="card-header">
-                            <h4>Galeria de Vídeos (YouTube)</h4>
-                            <button class="btn-primary" onclick="addVideoField()">+ Adicionar</button>
+                            <h4>Vídeo em Destaque (YouTube)</h4>
                         </div>
                         <div id="videoList">
                             <!-- Video Items will be injected here -->
@@ -262,9 +277,12 @@
                         <form id="styleForm">
                             <div class="form-group">
                                 <label class="form-label">Background da Seção de Vídeos</label>
-                                <input type="file" class="form-control" id="videoBgFile" accept="image/*" data-target="videoBg" data-preview="videoBgPreview">
+                                <label class="btn-upload">
+                                    <i class="fas fa-cloud-upload-alt"></i> Escolher Background
+                                    <input type="file" id="videoBgFile" accept="image/*" data-target="videoBg" data-preview="videoBgPreview" style="display: none;">
+                                </label>
                                 <input type="hidden" id="videoBg">
-                                <img id="videoBgPreview" src="" style="max-width: 300px; margin-top: 10px; border-radius: 5px; display: none;">
+                                <img id="videoBgPreview" src="" style="max-width: 300px; margin-top: 10px; border-radius: 0; display: none;">
                             </div>
                             <button type="submit" class="btn-primary">Salvar Estilo</button>
                         </form>
@@ -320,12 +338,12 @@
                             <h1 style="font-size: 3rem; margin: 10px 0;">R$ 9,90</h1>
                             <p style="color: var(--text-muted);">Para manutenção da plataforma e hospedagem</p>
                             
-                            <div id="paymentArea" style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px solid var(--border);">
+                            <div id="paymentArea" style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 0; border: 1px solid var(--border);">
                                 <h4 style="color: var(--text-main); margin-bottom: 15px;">Chave Pix para Pagamento</h4>
                                 
-                                <div id="pix-qrcode" style="display: flex; justify-content: center; margin-bottom: 20px; background: white; padding: 15px; width: fit-content; margin-left: auto; margin-right: auto; border-radius: 8px;"></div>
+                                <div id="pix-qrcode" style="display: flex; justify-content: center; margin-bottom: 20px; background: white; padding: 15px; width: fit-content; margin-left: auto; margin-right: auto; border-radius: 0;"></div>
 
-                                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 5px; margin-bottom: 15px; word-break: break-all; font-family: monospace; color: var(--primary); font-size: 1.1rem; border: 1px dashed var(--primary);">
+                                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 0; margin-bottom: 15px; word-break: break-all; font-family: monospace; color: var(--primary); font-size: 1.1rem; border: 1px dashed var(--primary);">
                                     3bb0e547-a5ec-45a2-a6a0-336a470b4fb2
                                 </div>
                                 <p style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 10px;">

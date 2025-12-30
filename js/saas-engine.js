@@ -21,6 +21,12 @@ const SaaS = {
                 overlayTitle: "Novo Show",
                 overlaySubtitle: "15/10/2024"
             },
+            nextEvent: {
+                active: true,
+                title: "Novo Show",
+                date: "15/10/2024",
+                link: "#contact"
+            },
             stats: [
                 { number: "25+", label: "Anos de Estrada" },
                 { number: "15+", label: "Bandas" },
@@ -42,9 +48,7 @@ const SaaS = {
                 email: "contato@anselmocardoso.com",
                 instagram: "@anselmocardoso"
             },
-            videos: [
-                { id: "video1", url: "assets/video.mp4", title: "Performance ao Vivo", type: "local" }
-            ],
+            videos: [],
             pricing: [
                 { id: 1, title: "Show Corporativo", price: "A consultar", features: ["2h de show", "Equipamento próprio", "Repertório personalizado"] },
                 { id: 2, title: "Casamentos", price: "A consultar", features: ["Cerimônia e Festa", "Banda completa ou Trio", "Reunião de alinhamento"] },

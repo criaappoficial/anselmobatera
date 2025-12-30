@@ -59,14 +59,14 @@ window.addEventListener('saasUserUpdated', (e) => {
             linkDiv.style.background = 'rgba(0,255,100,0.1)';
             linkDiv.style.border = '1px solid rgba(0,255,100,0.3)';
             linkDiv.style.padding = '15px';
-            linkDiv.style.borderRadius = '8px';
+            linkDiv.style.borderRadius = '0';
             linkDiv.style.marginTop = '20px';
             linkDiv.style.marginBottom = '20px';
             linkDiv.innerHTML = `
                 <h3 style="margin-top:0; font-size:1.1rem; color:var(--success)">Seu Link Público</h3>
                 <p style="font-size:0.9rem; color:#ccc; margin-bottom:10px;">Use este link para compartilhar ou testar seu site se a versão principal não atualizar imediatamente:</p>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="publicLinkInput" value="${window.location.origin}/index.html?uid=${user.uid}" readonly style="width:100%; background:rgba(0,0,0,0.3); border:none; color:white; padding:8px; border-radius:4px;" onclick="this.select()">
+                    <input type="text" id="publicLinkInput" value="${window.location.origin}/index.html?uid=${user.uid}" readonly style="width:100%; background:rgba(0,0,0,0.3); border:none; color:white; padding:8px; border-radius:0;" onclick="this.select()">
                     <button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('publicLinkInput').value).then(() => alert('Link copiado!'))" style="white-space:nowrap;"><i class="fas fa-copy"></i> Copiar</button>
                     <a href="${window.location.origin}/index.html?uid=${user.uid}" target="_blank" class="btn-primary" style="text-decoration:none; display:flex; align-items:center; white-space:nowrap; background: var(--secondary);">Abrir <i class="fas fa-external-link-alt" style="margin-left:5px;"></i></a>
                 </div>
@@ -154,11 +154,23 @@ window.addEventListener('saasConfigUpdated', (e) => {
     // Hero
     if(document.getElementById('heroTitle')) document.getElementById('heroTitle').value = config.hero?.title || "";
     if(document.getElementById('heroSubtitle')) document.getElementById('heroSubtitle').value = config.hero?.subtitle || "";
-    if(document.getElementById('heroOverlayTitle')) document.getElementById('heroOverlayTitle').value = config.hero?.overlayTitle || "";
-    if(document.getElementById('heroOverlaySubtitle')) document.getElementById('heroOverlaySubtitle').value = config.hero?.overlaySubtitle || "";
     if(document.getElementById('heroImage')) document.getElementById('heroImage').value = config.hero?.image || "";
     
     updateImagePreview('heroImagePreview', config.hero?.image);
+
+    // Agenda / Next Event
+    if (config.nextEvent) {
+        if(document.getElementById('eventTitle')) document.getElementById('eventTitle').value = config.nextEvent.title || "";
+        if(document.getElementById('eventDate')) document.getElementById('eventDate').value = config.nextEvent.date || "";
+        if(document.getElementById('eventLink')) document.getElementById('eventLink').value = config.nextEvent.link || "";
+        if(document.getElementById('eventActive')) document.getElementById('eventActive').checked = config.nextEvent.active !== false;
+    } else {
+        // Fallback for migration
+        if(document.getElementById('eventTitle')) document.getElementById('eventTitle').value = config.hero?.overlayTitle || "";
+        if(document.getElementById('eventDate')) document.getElementById('eventDate').value = config.hero?.overlaySubtitle || "";
+        if(document.getElementById('eventLink')) document.getElementById('eventLink').value = "#contact";
+        if(document.getElementById('eventActive')) document.getElementById('eventActive').checked = true;
+    }
 
     // About
     if(document.getElementById('aboutSubtitle')) document.getElementById('aboutSubtitle').value = config.about?.subtitle || "";
@@ -332,7 +344,7 @@ function showCustomModal(title, message) {
     modal.style.background = 'var(--surface, #1e1e1e)';
     modal.style.border = '1px solid var(--border, #333)';
     modal.style.borderTop = '4px solid var(--danger, #ff4444)';
-    modal.style.borderRadius = '12px';
+    modal.style.borderRadius = '0';
     modal.style.padding = '30px';
     modal.style.maxWidth = '450px';
     modal.style.width = '90%';
@@ -346,7 +358,7 @@ function showCustomModal(title, message) {
         </div>
         <h3 style="color: var(--text-main, #fff); margin-bottom: 15px; font-size: 1.4rem;">${title}</h3>
         <p style="color: var(--text-muted, #ccc); margin-bottom: 25px; line-height: 1.5;">${message}</p>
-        <button id="modal-close-btn" class="btn-primary" style="padding: 12px 30px; border-radius: 50px; width: 100%;">Entendi, vou comprimir</button>
+        <button id="modal-close-btn" class="btn-primary" style="padding: 12px 30px; border-radius: 0; width: 100%;">Entendi, vou comprimir</button>
     `;
 
     overlay.appendChild(modal);
@@ -480,14 +492,33 @@ document.getElementById('heroForm').addEventListener('submit', async (e) => {
         await SaaS.updateSection('hero', {
             title: document.getElementById('heroTitle').value,
             subtitle: document.getElementById('heroSubtitle').value,
-            overlayTitle: document.getElementById('heroOverlayTitle').value,
-            overlaySubtitle: document.getElementById('heroOverlaySubtitle').value,
+            // overlayTitle/Subtitle moved to nextEvent, keeping them here only if needed for legacy or just removing.
+            // Removing to clean up. The migration logic handles reading old values.
             image: document.getElementById('heroImage').value
         });
         alert('Seção Hero atualizada com sucesso!');
     } catch (err) {
         console.error(err);
         alert('Erro ao salvar Hero.');
+    } finally {
+        hideLoader();
+    }
+});
+
+document.getElementById('eventForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoader();
+    try {
+        await SaaS.updateSection('nextEvent', {
+            title: document.getElementById('eventTitle').value,
+            date: document.getElementById('eventDate').value,
+            link: document.getElementById('eventLink').value,
+            active: document.getElementById('eventActive').checked
+        });
+        alert('Agenda atualizada com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar Agenda.');
     } finally {
         hideLoader();
     }
@@ -512,15 +543,35 @@ document.getElementById('aboutForm').addEventListener('submit', async (e) => {
     }
 });
 
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoader();
+    try {
+        await SaaS.updateSection('contact', {
+            whatsapp: document.getElementById('contactWhatsapp').value,
+            email: document.getElementById('contactEmail').value,
+            instagram: document.getElementById('contactInstagram').value
+        });
+        alert('Contatos atualizados com sucesso!');
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar contatos.');
+    } finally {
+        hideLoader();
+    }
+});
+
 // Brands Logic
 window.removeBrand = async function(index) {
     if(!confirm('Tem certeza que deseja remover esta marca?')) return;
     
     showLoader();
     try {
-        const brands = SaaS.getConfig().brands || [];
+        const config = SaaS.getConfig();
+        const brands = config.brands || [];
         brands.splice(index, 1);
-        await SaaS.updateSection('brands', brands);
+        config.brands = brands; // Ensure assignment
+        await SaaS.saveConfig(config);
         renderBrands(); 
     } catch (err) {
         console.error(err);
@@ -530,34 +581,14 @@ window.removeBrand = async function(index) {
     }
 };
 
-window.saveBrand = async function(index) {
+window.addBrandField = async function() {
     showLoader();
     try {
-        const brands = SaaS.getConfig().brands || [];
-        if (brands[index]) {
-            brands[index].name = document.getElementById(`brand-name-${index}`).value;
-             const logoInput = document.getElementById(`brand-logo-${index}`);
-             if (logoInput && logoInput.value) {
-                 brands[index].logo = logoInput.value;
-             }
-             await SaaS.updateSection('brands', brands);
-             alert('Marca salva com sucesso!');
-             renderBrands();
-        }
-    } catch (err) {
-         console.error(err);
-         alert('Erro ao salvar marca.');
-    } finally {
-         hideLoader();
-    }
-};
-
-window.addBrand = async function() {
-    showLoader();
-    try {
-        const brands = SaaS.getConfig().brands || [];
+        const config = SaaS.getConfig();
+        const brands = config.brands || [];
         brands.push({ name: "Nova Marca", logo: "" });
-        await SaaS.updateSection('brands', brands);
+        config.brands = brands;
+        await SaaS.saveConfig(config);
         renderBrands();
     } catch (err) {
         console.error(err);
@@ -567,8 +598,38 @@ window.addBrand = async function() {
     }
 };
 
+window.saveBrands = async function() {
+    showLoader();
+    try {
+        const config = SaaS.getConfig();
+        const brands = config.brands || [];
+        
+        // Update values from DOM
+        const newBrands = brands.map((brand, index) => {
+            const nameInput = document.getElementById(`brand-name-${index}`);
+            const logoInput = document.getElementById(`brand-logo-${index}`);
+            
+            return {
+                name: nameInput ? nameInput.value : brand.name,
+                logo: logoInput ? logoInput.value : brand.logo
+            };
+        });
+        
+        config.brands = newBrands;
+        await SaaS.saveConfig(config);
+        alert('Marcas salvas com sucesso!');
+        renderBrands();
+    } catch (err) {
+         console.error(err);
+         alert('Erro ao salvar marcas.');
+    } finally {
+         hideLoader();
+    }
+};
+
 function renderBrands() {
-    const list = document.getElementById('brandsList');
+    // Fixed ID: brandList instead of brandsList
+    const list = document.getElementById('brandList');
     if (!list) return;
     list.innerHTML = '';
     const brands = SaaS.getConfig().brands || [];
@@ -580,10 +641,7 @@ function renderBrands() {
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <strong>Marca ${index + 1}</strong>
-                <div>
-                    <button type="button" class="btn-primary" onclick="saveBrand(${index})" style="margin-right: 5px;">Salvar</button>
-                    <button type="button" class="btn-primary" style="background: var(--danger);" onclick="removeBrand(${index})">Remover</button>
-                </div>
+                <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px; font-size: 0.8rem;" onclick="removeBrand(${index})">Remover</button>
             </div>
             <div class="form-group">
                 <label class="form-label">Nome da Marca</label>
@@ -591,9 +649,14 @@ function renderBrands() {
             </div>
             <div class="form-group">
                 <label class="form-label">Logo (Upload)</label>
-                <input type="file" class="form-control" accept="image/*" data-target="brand-logo-${index}" data-preview="brand-logo-preview-${index}">
+                <label class="btn-upload">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload Logo
+                    <input type="file" style="display: none;" accept="image/*" data-target="brand-logo-${index}" data-preview="brand-logo-preview-${index}">
+                </label>
                 <input type="hidden" id="brand-logo-${index}" value="${brand.logo || ''}">
-                <img id="brand-logo-preview-${index}" src="${brand.logo || ''}" style="max-width: 100px; margin-top: 10px; display: ${brand.logo ? 'block' : 'none'};">
+                <div style="margin-top: 10px; background: rgba(255,255,255,0.05); padding: 5px; width: fit-content; border-radius: 4px;">
+                     <img id="brand-logo-preview-${index}" src="${brand.logo || ''}" style="max-height: 50px; display: ${brand.logo ? 'block' : 'none'};">
+                </div>
             </div>
         `;
         list.appendChild(div);
@@ -636,7 +699,7 @@ function renderStats(editIndex = -1) {
             div.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="background: var(--primary); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
+                        <div style="background: var(--primary); color: white; padding: 5px 10px; border-radius: 0; font-weight: bold;">
                             ${stat.number || '0'}
                         </div>
                         <div>
@@ -767,7 +830,7 @@ function renderGalleryInputs(providedConfig = null) {
         div.style.padding = '20px';
         div.style.background = 'var(--bg-darker)';
         div.style.border = '1px solid rgba(255,255,255,0.05)';
-        div.style.borderRadius = '12px';
+        div.style.borderRadius = '0';
         div.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
         div.onmouseenter = () => { div.style.transform = 'translateY(-2px)'; div.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)'; };
         div.onmouseleave = () => { div.style.transform = 'translateY(0)'; div.style.boxShadow = 'none'; };
@@ -775,7 +838,7 @@ function renderGalleryInputs(providedConfig = null) {
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="background: var(--primary); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.8rem; font-weight: bold;">${i}</span>
+                    <span style="background: var(--primary); color: white; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 0; font-size: 0.8rem; font-weight: bold;">${i}</span>
                     <strong style="color: white; font-size: 1rem;">Item da Galeria</strong>
                 </div>
                 <span style="font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px;">Momentos em Ação</span>
@@ -789,8 +852,8 @@ function renderGalleryInputs(providedConfig = null) {
                         <!-- <span id="gallery-preview-${i}-placeholder" style="color: rgba(255,255,255,0.2); font-size: 1.5rem;"><i class="fas fa-image"></i></span> -->
                     </div>
                     
-                    <label class="btn-primary" style="font-size: 0.75rem; padding: 6px; text-align: center; cursor: pointer; width: 100%; border-radius: 6px; display: block;">
-                        <i class="fas fa-upload"></i> Escolher Foto
+                    <label class="btn-upload" style="font-size: 0.75rem; padding: 10px; width: 100%;">
+                        <i class="fas fa-cloud-upload-alt"></i> Escolher Foto
                         <input type="file" style="display: none;" id="gallery-file-${i}" accept="image/*" data-target="gallery-img-${i}" data-preview="gallery-preview-${i}">
                     </label>
                     <input type="hidden" id="gallery-img-${i}" value="${item.image || ''}">
@@ -836,64 +899,57 @@ document.getElementById('styleForm').addEventListener('submit', async (e) => {
 });
 
 function renderVideos() {
-    const list = document.getElementById('videosList');
+    const list = document.getElementById('videoList');
     if (!list) return;
     list.innerHTML = '';
-    const videos = SaaS.getConfig().videos || [];
     
-    videos.forEach((video, index) => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.style.marginBottom = '10px';
-        div.innerHTML = `
-             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                <strong>Vídeo ${index + 1}</strong>
-                <button type="button" class="btn-primary" style="background: var(--danger); padding: 5px 10px; font-size: 0.8rem;" onclick="removeVideo(${index})">Remover</button>
+    // Get first video or default empty
+    const videos = SaaS.getConfig().videos || [];
+    const video = videos.length > 0 ? videos[0] : { title: "", url: "" };
+    
+    const div = document.createElement('div');
+    // div.className = 'card'; // Removed card class to avoid double padding if inside another card, or keep if needed. 
+    // The HTML has a card around videoList? No, videoList is inside a card. 
+    // "div.className = 'card'" was adding a nested card look. 
+    // Let's just render the form groups.
+    
+    div.innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Título do Vídeo</label>
+                <input type="text" class="form-control" value="${video.title || ''}" id="video-title-main" placeholder="Ex: Show ao Vivo">
             </div>
             <div class="form-group">
                 <label class="form-label">URL do YouTube</label>
-                <input type="text" class="form-control" value="${video.url}" id="video-url-${index}">
+                <input type="text" class="form-control" value="${video.url || ''}" id="video-url-main" placeholder="https://youtube.com/...">
             </div>
-        `;
-        list.appendChild(div);
-    });
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">
+                <i class="fas fa-info-circle"></i> Este será o único vídeo exibido na página inicial. Você pode alterá-lo a qualquer momento.
+            </p>
+    `;
+    list.appendChild(div);
 }
 
-window.addVideoField = async function() {
-    showLoader();
-    try {
-        const config = SaaS.getConfig();
-        config.videos = config.videos || [];
-        config.videos.push({ url: "" });
-        await SaaS.saveConfig(config);
-        renderVideos();
-    } catch (err) {
-        console.error(err);
-        alert('Erro ao adicionar vídeo.');
-    } finally {
-        hideLoader();
-    }
-};
+// Removed addVideoField and removeVideo as we only support one video now.
 
 window.saveVideos = async function() {
     showLoader();
     try {
         const config = SaaS.getConfig();
-        const count = config.videos ? config.videos.length : 0;
-        const newVideos = [];
         
-        for(let i=0; i<count; i++) {
-            newVideos.push({
-                url: document.getElementById(`video-url-${i}`).value
-            });
-        }
+        const title = document.getElementById('video-title-main').value;
+        const url = document.getElementById('video-url-main').value;
         
-        config.videos = newVideos;
+        // Save as single-item array
+        config.videos = [{
+            title: title,
+            url: url
+        }];
+        
         await SaaS.saveConfig(config);
-        alert('Vídeos salvos com sucesso!');
+        alert('Vídeo salvo com sucesso!');
     } catch (err) {
         console.error(err);
-        alert('Erro ao salvar vídeos.');
+        alert('Erro ao salvar vídeo.');
     } finally {
         hideLoader();
     }
@@ -925,6 +981,7 @@ function renderPricing() {
         const div = document.createElement('div');
         div.className = 'form-group card';
         div.style.padding = '15px';
+        const featuresText = item.features ? item.features.join('\n') : '';
         div.innerHTML = `
              <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
                 <strong>Serviço ${index + 1}</strong>
@@ -939,6 +996,10 @@ function renderPricing() {
                     <label class="form-label">Valor</label>
                     <input type="text" class="form-control" value="${item.price}" id="price-val-${index}">
                 </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <label class="form-label">Detalhes / Itens (um por linha)</label>
+                <textarea class="form-control" rows="4" id="price-features-${index}">${featuresText}</textarea>
             </div>
         `;
         list.appendChild(div);
@@ -969,11 +1030,14 @@ window.savePricing = async function() {
         const newPricing = [];
 
         for(let i=0; i<count; i++) {
+            const featuresInput = document.getElementById(`price-features-${i}`);
+            const features = featuresInput ? featuresInput.value.split('\n').filter(line => line.trim() !== '') : [];
+
             newPricing.push({
                 id: i,
                 title: document.getElementById(`price-title-${i}`).value,
                 price: document.getElementById(`price-val-${i}`).value,
-                features: config.pricing[i].features || []
+                features: features
             });
         }
 
