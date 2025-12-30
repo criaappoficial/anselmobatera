@@ -262,7 +262,7 @@
                             <h4>Galeria de Fotos</h4>
                         </div>
                         <form id="galleryForm">
-                            <div id="gallery-inputs-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div id="gallery-inputs-container" class="responsive-grid">
                                 <!-- Generated via admin.js -->
                             </div>
                             <button type="submit" class="btn-primary" style="margin-top: 20px;">Salvar Galeria</button>
@@ -282,7 +282,7 @@
                                     <input type="file" id="videoBgFile" accept="image/*" data-target="videoBg" data-preview="videoBgPreview" style="display: none;">
                                 </label>
                                 <input type="hidden" id="videoBg">
-                                <img id="videoBgPreview" src="" style="max-width: 300px; margin-top: 10px; border-radius: 0; display: none;">
+                                <img id="videoBgPreview" src="" style="max-width: 100%; width: 300px; margin-top: 10px; border-radius: 0; display: none;">
                             </div>
                             <button type="submit" class="btn-primary">Salvar Estilo</button>
                         </form>
@@ -361,6 +361,20 @@
 
             </div>
         </main>
+    </div>
+
+    <!-- Limit Modal -->
+    <div id="limitModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: var(--surface); padding: 40px; border-radius: 0; max-width: 500px; text-align: center; border: 1px solid var(--border); position: relative;">
+            <span class="close-modal" onclick="document.getElementById('limitModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: var(--text-muted);">&times;</span>
+            <h3 style="color: var(--primary); margin-bottom: 20px;">Limite Atingido</h3>
+            <p style="margin-bottom: 30px; color: var(--text-main);">
+                Você atingiu o limite de 3 serviços. Para adicionar mais serviços, é cobrada uma taxa adicional de <strong>R$ 9,90</strong>.
+            </p>
+            <a href="https://wa.me/5582996703421?text=Olá, gostaria de aumentar o limite de serviços no meu site." target="_blank" class="btn-primary" style="background: #25D366; text-decoration: none; display: inline-block;">
+                <i class="fab fa-whatsapp"></i> Falar com Suporte
+            </a>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>

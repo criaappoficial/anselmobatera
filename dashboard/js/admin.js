@@ -1007,10 +1007,21 @@ function renderPricing() {
 }
 
 window.addPricingField = async function() {
+    const config = SaaS.getConfig();
+    config.pricing = config.pricing || [];
+
+    if (config.pricing.length >= 3) {
+        const modal = document.getElementById('limitModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        } else {
+            alert('Você atingiu o limite de 3 serviços. Entre em contato com o suporte para aumentar seu limite.');
+        }
+        return;
+    }
+
     showLoader();
     try {
-        const config = SaaS.getConfig();
-        config.pricing = config.pricing || [];
         config.pricing.push({ title: "Novo Serviço", price: "R$ 0,00", features: [] });
         await SaaS.saveConfig(config);
         renderPricing();
