@@ -147,7 +147,7 @@ function applyConfig(config) {
         
         pricingToRender.forEach(item => {
             const featuresHTML = item.features ? item.features.map(f => 
-                `<li style="margin-bottom: 10px; display: flex; align-items: flex-start;">
+                `<li style="margin-bottom: 10px; display: flex; align-items: flex-start; justify-content: center;">
                     <i class="fas fa-check" style="color: var(--primary); margin-right: 10px; margin-top: 5px;"></i>
                     <span>${f}</span>
                 </li>`
@@ -167,7 +167,7 @@ function applyConfig(config) {
             card.innerHTML = `
                 <h3 style="font-size: 1.5rem; margin-bottom: 15px;">${item.title}</h3>
                 <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">${item.price}</div>
-                <ul style="text-align: left; margin-bottom: 30px; color: var(--text-muted); list-style: none; padding: 0; flex-grow: 1;">
+                <ul style="text-align: center; margin-bottom: 30px; color: var(--text-muted); list-style: none; padding: 0; flex-grow: 1;">
                     ${featuresHTML}
                 </ul>
                 <a href="https://wa.me/${config.contact.whatsapp.replace(/\D/g,'')}?text=Olá, tenho interesse no plano ${item.title}" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: auto;" target="_blank">
