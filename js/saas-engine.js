@@ -49,7 +49,13 @@ const SaaS = {
                 instagram: "@anselmocardoso",
                 youtube: "https://youtube.com"
             },
-            videos: [],
+            videos: [
+                {
+                    title: "Performance em Estúdio",
+                    url: "https://www.youtube.com/watch?v=wbXci5Yp1O0",
+                    type: "youtube"
+                }
+            ],
             pricing: [
                 { id: 1, title: "Show Corporativo", price: "A consultar", features: ["2h de show", "Equipamento próprio", "Repertório personalizado"] },
                 { id: 2, title: "Casamentos", price: "A consultar", features: ["Cerimônia e Festa", "Banda completa ou Trio", "Reunião de alinhamento"] },

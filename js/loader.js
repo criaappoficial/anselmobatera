@@ -78,12 +78,19 @@ function applyConfig(config) {
 
     // 4. Videos
     const videoGallery = document.getElementById('video-gallery');
-    if (videoGallery && config.videos && config.videos.length > 0) {
+    
+    // Fallback to defaults if empty
+    let videosToRender = config.videos;
+    if ((!videosToRender || videosToRender.length === 0) && SaaS.defaults && SaaS.defaults.config.videos) {
+         videosToRender = SaaS.defaults.config.videos;
+    }
+
+    if (videoGallery && videosToRender && videosToRender.length > 0) {
         // Clear existing ONLY IF we have new videos from config that are different
         // For simplicity, we'll rebuild.
         videoGallery.innerHTML = '';
         
-        config.videos.forEach(video => {
+        videosToRender.forEach(video => {
             const wrapper = document.createElement('div');
             wrapper.className = 'video-wrapper';
             wrapper.style.marginBottom = '30px';
@@ -126,46 +133,48 @@ function applyConfig(config) {
     }
 
     
-    // 5. Pricing (Inject into Styles Grid or New Section?)
-    // The user requested a Pricing Table. The current site doesn't have one.
-    // We should inject it before Contact if it exists.
-    const pricingSectionId = 'pricing-section-injected';
-    let pricingSection = document.getElementById(pricingSectionId);
+    // 5. Pricing
+    const pricingGrid = document.getElementById('pricing-grid');
     
-    if (config.pricing && config.pricing.length > 0) {
-        if (!pricingSection) {
-            pricingSection = document.createElement('section');
-            pricingSection.id = pricingSectionId;
-            pricingSection.className = 'section-padding';
-            pricingSection.style.background = 'var(--bg-darker)';
-            
-            const contactSection = document.getElementById('contact');
-            contactSection.parentNode.insertBefore(pricingSection, contactSection);
-        }
+    // Fallback to defaults if empty
+    let pricingToRender = config.pricing;
+    if ((!pricingToRender || pricingToRender.length === 0) && SaaS.defaults && SaaS.defaults.config.pricing) {
+        pricingToRender = SaaS.defaults.config.pricing;
+    }
+
+    if (pricingGrid && pricingToRender && pricingToRender.length > 0) {
+        pricingGrid.innerHTML = '';
         
-        let pricingHTML = `
-            <div class="container">
-                <div class="section-header" style="text-align: center;">
-                    <span class="section-subtitle">Investimento</span>
-                    <h2 class="section-title">Opções de <span class="text-gradient">Contratação</span></h2>
-                </div>
-                <div class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 50px;">
-        `;
-        
-        config.pricing.forEach(item => {
-            pricingHTML += `
-                <div class="pricing-card animate active" style="background: var(--surface); padding: 40px; border-radius: 20px; border: 1px solid var(--border); text-align: center; transition: var(--transition);">
-                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">${item.title}</h3>
-                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">${item.price}</div>
-                    <ul style="text-align: left; margin-bottom: 30px; color: var(--text-muted);">
-                        ${item.features ? item.features.map(f => `<li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--primary); margin-right: 10px;"></i>${f}</li>`).join('') : ''}
-                    </ul>
-                    <a href="https://wa.me/${config.contact.whatsapp}?text=Olá, tenho interesse no plano ${item.title}" class="btn btn-outline" style="width: 100%; justify-content: center;">Contratar</a>
-                </div>
+        pricingToRender.forEach(item => {
+            const featuresHTML = item.features ? item.features.map(f => 
+                `<li style="margin-bottom: 10px; display: flex; align-items: flex-start;">
+                    <i class="fas fa-check" style="color: var(--primary); margin-right: 10px; margin-top: 5px;"></i>
+                    <span>${f}</span>
+                </li>`
+            ).join('') : '';
+
+            const card = document.createElement('div');
+            card.className = 'pricing-card animate active';
+            card.style.background = 'var(--surface)';
+            card.style.padding = '40px';
+            card.style.borderRadius = '20px'; // Enforce consistency
+            card.style.border = '1px solid var(--border)';
+            card.style.textAlign = 'center';
+            card.style.transition = 'var(--transition)';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+
+            card.innerHTML = `
+                <h3 style="font-size: 1.5rem; margin-bottom: 15px;">${item.title}</h3>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 20px;">${item.price}</div>
+                <ul style="text-align: left; margin-bottom: 30px; color: var(--text-muted); list-style: none; padding: 0; flex-grow: 1;">
+                    ${featuresHTML}
+                </ul>
+                <a href="https://wa.me/${config.contact.whatsapp.replace(/\D/g,'')}?text=Olá, tenho interesse no plano ${item.title}" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top: auto;" target="_blank">
+                    Contratar
+                </a>
             `;
+            pricingGrid.appendChild(card);
         });
-        
-        pricingHTML += `</div></div>`;
-        pricingSection.innerHTML = pricingHTML;
     }
 }
