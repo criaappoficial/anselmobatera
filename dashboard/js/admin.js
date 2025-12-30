@@ -786,7 +786,7 @@ function renderGalleryInputs(providedConfig = null) {
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="width: 100%; aspect-ratio: 1/1; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; position: relative; border: 2px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; transition: border-color 0.3s;">
                         <img id="gallery-preview-${i}" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                        <span id="gallery-preview-${i}-placeholder" style="color: rgba(255,255,255,0.2); font-size: 1.5rem;"><i class="fas fa-image"></i></span>
+                        <!-- <span id="gallery-preview-${i}-placeholder" style="color: rgba(255,255,255,0.2); font-size: 1.5rem;"><i class="fas fa-image"></i></span> -->
                     </div>
                     
                     <label class="btn-primary" style="font-size: 0.75rem; padding: 6px; text-align: center; cursor: pointer; width: 100%; border-radius: 6px; display: block;">
