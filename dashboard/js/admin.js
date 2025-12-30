@@ -197,6 +197,7 @@ window.addEventListener('saasConfigUpdated', (e) => {
     if(document.getElementById('contactWhatsapp')) document.getElementById('contactWhatsapp').value = config.contact?.whatsapp || "";
     if(document.getElementById('contactEmail')) document.getElementById('contactEmail').value = config.contact?.email || "";
     if(document.getElementById('contactInstagram')) document.getElementById('contactInstagram').value = config.contact?.instagram || "";
+    if(document.getElementById('contactYoutube')) document.getElementById('contactYoutube').value = config.contact?.youtube || "";
     
     // Refresh Lists
     renderVideos();
@@ -550,7 +551,8 @@ document.getElementById('contactForm').addEventListener('submit', async (e) => {
         await SaaS.updateSection('contact', {
             whatsapp: document.getElementById('contactWhatsapp').value,
             email: document.getElementById('contactEmail').value,
-            instagram: document.getElementById('contactInstagram').value
+            instagram: document.getElementById('contactInstagram').value,
+            youtube: document.getElementById('contactYoutube').value
         });
         alert('Contatos atualizados com sucesso!');
     } catch (err) {

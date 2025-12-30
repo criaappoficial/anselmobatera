@@ -46,7 +46,8 @@ const SaaS = {
             contact: {
                 whatsapp: "5511999999999",
                 email: "contato@anselmocardoso.com",
-                instagram: "@anselmocardoso"
+                instagram: "@anselmocardoso",
+                youtube: "https://youtube.com"
             },
             videos: [],
             pricing: [

@@ -38,6 +38,7 @@ function applyConfig(config) {
     const waBtn = document.getElementById('contact-whatsapp-btn');
     const emailBtn = document.getElementById('contact-email-btn');
     const instaBtn = document.getElementById('contact-instagram-btn');
+    const youtubeBtn = document.getElementById('contact-youtube-btn');
 
     if (waBtn && config.contact.whatsapp) {
         waBtn.href = `https://wa.me/${config.contact.whatsapp}`;
@@ -46,7 +47,15 @@ function applyConfig(config) {
         emailBtn.href = `mailto:${config.contact.email}`;
     }
     if (instaBtn && config.contact.instagram) {
-        instaBtn.href = `https://instagram.com/${config.contact.instagram.replace('@', '')}`;
+        let instaUrl = config.contact.instagram;
+        if (!instaUrl.startsWith('http')) {
+            instaUrl = `https://instagram.com/${instaUrl.replace('@', '')}`;
+        }
+        instaBtn.href = instaUrl;
+    }
+    if (youtubeBtn && config.contact.youtube) {
+        youtubeBtn.href = config.contact.youtube;
+        youtubeBtn.target = "_blank";
     }
 
     // 6. Gallery
